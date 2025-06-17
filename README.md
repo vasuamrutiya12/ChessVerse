@@ -9,13 +9,12 @@
 
 ### 🕹️ Gameplay
 - Real-time multiplayer chess via WebSockets
-- Full rule support: check, checkmate, stalemate
+- Full rule support: check, checkmate
 - Advanced move validation and hint system
 - Special moves: castling, en passant, pawn promotion
 - PGN move history and replay
 - Time control with adjustable clocks
 - Resign and draw support
-
 
 ### 👥 User Features
 - Secure user authentication (JWT-based)
