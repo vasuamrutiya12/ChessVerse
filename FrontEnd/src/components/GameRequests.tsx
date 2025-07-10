@@ -14,7 +14,7 @@ export const GameRequests: React.FC<GameRequestsProps> = ({ socket }) => {
         if (!userdetails?.user?.email) return;
 
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/game/handlegamerequest`, {
+            const response = await fetch('https://chessverse-production.up.railway.app/game/handlegamerequest', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

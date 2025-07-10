@@ -16,7 +16,7 @@ const Leaderboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_BASE_URL}/api/leaderboard?topN=10`, {
+    fetch('https://chessverse-production.up.railway.app/api/leaderboard?topN=10', {
       credentials: 'include'
     })
       .then(res => {

@@ -31,7 +31,7 @@ const PlayerStats: React.FC<PlayerStatsProps> = ({ email }) => {
     setLoading(true);
     setError(null);
     
-    fetch(`${import.meta.env.VITE_API_BASE_URL}/api/player-stats/${encodeURIComponent(email.trim())}`, {
+    fetch(`https://chessverse-production.up.railway.app/api/player-stats/${encodeURIComponent(email.trim())}`, {
       credentials: 'include'
     })
       .then(res => {

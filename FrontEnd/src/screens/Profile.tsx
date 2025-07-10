@@ -12,7 +12,7 @@ export const Profile = () => {
     const handleLogout = async () => {
         try {
             // Clear the auth cookie by making a request to logout endpoint
-            await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/logout`, {
+            await fetch('https://chessverse-production.up.railway.app/api/auth/logout', {
                 method: 'POST',
                 credentials: 'include'
             });

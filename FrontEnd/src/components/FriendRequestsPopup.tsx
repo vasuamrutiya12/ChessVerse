@@ -20,7 +20,7 @@ const FriendRequestsPopup: React.FC<FriendRequestsPopupProps> = ({ onClose }) =>
 
         setLoading(`${email}-${action}`);
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/game/handlefriendrequest`, {
+            const response = await fetch('https://chessverse-production.up.railway.app/game/handlefriendrequest', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
