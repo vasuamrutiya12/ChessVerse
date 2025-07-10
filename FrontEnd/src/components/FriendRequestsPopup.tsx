@@ -20,7 +20,7 @@ const FriendRequestsPopup: React.FC<FriendRequestsPopupProps> = ({ onClose }) =>
 
         setLoading(`${email}-${action}`);
         try {
-            const response = await fetch('http://localhost:3000/game/handlefriendrequest', {
+            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/game/handlefriendrequest`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

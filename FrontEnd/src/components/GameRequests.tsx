@@ -14,7 +14,7 @@ export const GameRequests: React.FC<GameRequestsProps> = ({ socket }) => {
         if (!userdetails?.user?.email) return;
 
         try {
-            const response = await fetch('http://localhost:3000/game/handlegamerequest', {
+            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/game/handlegamerequest`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

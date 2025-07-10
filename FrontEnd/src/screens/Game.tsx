@@ -114,7 +114,7 @@ export const Game = () => {
 
     const handleFriendGameRequest = async (friendEmail: string) => {
         try {
-            const response = await fetch('http://localhost:3000/game/sendgamerequest', {
+            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/game/sendgamerequest`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

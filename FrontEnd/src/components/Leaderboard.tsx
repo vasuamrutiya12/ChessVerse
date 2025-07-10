@@ -16,7 +16,7 @@ const Leaderboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('http://localhost:3000/api/leaderboard?topN=10', {
+    fetch(`${import.meta.env.VITE_API_BASE_URL}/api/leaderboard?topN=10`, {
       credentials: 'include'
     })
       .then(res => {

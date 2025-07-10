@@ -26,7 +26,7 @@ const AddFriendPopup: React.FC<AddFriendPopupProps> = ({ emails, onClose }) => {
         };
 
         try {
-            const response = await fetch('http://localhost:3000/game/sendfriendrequest', {
+            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/game/sendfriendrequest`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

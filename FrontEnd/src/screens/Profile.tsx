@@ -12,7 +12,7 @@ export const Profile = () => {
     const handleLogout = async () => {
         try {
             // Clear the auth cookie by making a request to logout endpoint
-            await fetch('http://localhost:3000/api/auth/logout', {
+            await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/logout`, {
                 method: 'POST',
                 credentials: 'include'
             });
