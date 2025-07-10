@@ -20,6 +20,13 @@ public class User {
     private List<String> friendRequests = new ArrayList<>();
     private List<String> friendList = new ArrayList<>();
     private List<GameRequest> gameRequests = new ArrayList<>();
+    private int elo = 1200;
+    private int wins = 0;
+    private int losses = 0;
+    private int draws = 0;
+    private List<String> gameHistory = new ArrayList<>();
+    private int currentStreak = 0; // positive for win streak, negative for loss streak
+    private double averageMoveTime = 0.0;
 
     // Constructors
     public User() {}
@@ -79,6 +86,62 @@ public class User {
 
     public void setGameRequests(List<GameRequest> gameRequests) {
         this.gameRequests = gameRequests;
+    }
+
+    public int getElo() {
+        return elo;
+    }
+
+    public void setElo(int elo) {
+        this.elo = elo;
+    }
+
+    public int getWins() {
+        return wins;
+    }
+
+    public void setWins(int wins) {
+        this.wins = wins;
+    }
+
+    public int getLosses() {
+        return losses;
+    }
+
+    public void setLosses(int losses) {
+        this.losses = losses;
+    }
+
+    public int getDraws() {
+        return draws;
+    }
+
+    public void setDraws(int draws) {
+        this.draws = draws;
+    }
+
+    public List<String> getGameHistory() {
+        return gameHistory;
+    }
+
+    public void setGameHistory(List<String> gameHistory) {
+        this.gameHistory = gameHistory;
+    }
+
+    public int getCurrentStreak() {
+        return currentStreak;
+    }
+
+    public void setCurrentStreak(int currentStreak) {
+        this.currentStreak = currentStreak;
+    }
+
+    public double getAverageMoveTime() {
+        return averageMoveTime;
+    }
+
+    public void setAverageMoveTime(double averageMoveTime) {
+        this.averageMoveTime = averageMoveTime;
     }
 
     // Inner class for GameRequest

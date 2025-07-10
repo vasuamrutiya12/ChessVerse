@@ -3,6 +3,7 @@ package com.chess.controller;
 import com.chess.dto.AuthRequest;
 import com.chess.dto.AuthResponse;
 import com.chess.model.User;
+
 import com.chess.repository.UserRepository;
 import com.chess.security.JwtUtil;
 import jakarta.servlet.http.Cookie;
@@ -111,6 +112,47 @@ public class AuthController {
             e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of("message", "Server error: " + e.getMessage()));
         }
+    }
+
+    @GetMapping("/leaderboard")
+    public ResponseEntity<?> getLeaderboard(@RequestParam(defaultValue = "10") int topN) {
+        List<User> allUsers = userRepository.findAll();
+        System.out.print(allUsers);
+        allUsers.sort((u1, u2) -> Integer.compare(u2.getElo(), u1.getElo()));
+        List<Map<String, Object>> leaderboard = (List<Map<String, Object>>) (List<?>) allUsers.stream().limit(topN).map(user -> Map.of(
+            "name", user.getName(),
+            "email", user.getEmail(),
+            "elo", user.getElo(),
+            "wins", user.getWins(),
+            "losses", user.getLosses(),
+            "draws", user.getDraws(),
+            "currentStreak", user.getCurrentStreak()
+        )).toList();
+        return ResponseEntity.ok(leaderboard);
+    }
+
+    @GetMapping("/player-stats/{email}")
+    public ResponseEntity<?> getPlayerStats(@PathVariable String email) {
+        Optional<User> userOpt = userRepository.findByEmail(email);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(404).body(Map.of("message", "User not found"));
+        }
+        User user = userOpt.get();
+        int totalGames = user.getWins() + user.getLosses() + user.getDraws();
+        double winRate = totalGames > 0 ? (double) user.getWins() / totalGames : 0.0;
+        Map<String, Object> stats = Map.of(
+            "name", user.getName(),
+            "email", user.getEmail(),
+            "elo", user.getElo(),
+            "wins", user.getWins(),
+            "losses", user.getLosses(),
+            "draws", user.getDraws(),
+            "winRate", winRate,
+            "averageMoveTime", user.getAverageMoveTime(),
+            "currentStreak", user.getCurrentStreak(),
+            "gameHistory", user.getGameHistory()
+        );
+        return ResponseEntity.ok(stats);
     }
 
     private String getTokenFromCookies(HttpServletRequest request) {

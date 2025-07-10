@@ -18,17 +18,23 @@ public class Game {
     private int timeLeft = 60;
     private String gameId;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private GameManager gameManager;
 
     public Game(WebSocketSession player1, WebSocketSession player2) {
         this(player1, player2, generateGameId());
     }
 
     public Game(WebSocketSession player1, WebSocketSession player2, String gameId) {
+        this(player1, player2, gameId, null);
+    }
+
+    public Game(WebSocketSession player1, WebSocketSession player2, String gameId, GameManager gameManager) {
         this.player1 = player1;
         this.player2 = player2;
         this.chessEngine = new ChessEngine();
         this.isYourTurn = true;
         this.gameId = gameId;
+        this.gameManager = gameManager;
 
         initializeGame();
         startTimer();
@@ -113,6 +119,55 @@ public class Game {
         }
     }
 
+    public void resign(WebSocketSession session) {
+        try {
+            String winner;
+            String loser;
+            String result;
+
+            if (session.equals(player1)) {
+                winner = "Player-2(Black)";
+                loser = "Player-1(White)";
+                result = "player2_win";
+            } else {
+                winner = "Player-1(White)";
+                loser = "Player-2(Black)";
+                result = "player1_win";
+            }
+
+            String gameOverMessage1 = objectMapper.writeValueAsString(Map.of(
+                    "type", Messages.GAME_OVER,
+                    "payload", Map.of(
+                            "winner", winner,
+                            "msg", loser.equals("Player-1(White)") ? "You resigned" : "Opponent resigned"
+                    )
+            ));
+
+            String gameOverMessage2 = objectMapper.writeValueAsString(Map.of(
+                    "type", Messages.GAME_OVER,
+                    "payload", Map.of(
+                            "winner", winner,
+                            "msg", loser.equals("Player-2(Black)") ? "You resigned" : "Opponent resigned"
+                    )
+            ));
+
+            player1.sendMessage(new TextMessage(gameOverMessage1));
+            player2.sendMessage(new TextMessage(gameOverMessage2));
+
+            if (timer != null) {
+                timer.cancel();
+            }
+
+            // Update ELO and stats
+            if (gameManager != null) {
+                gameManager.updatePlayerStatsAndElo(player1, player2, result, gameId);
+            }
+
+        } catch (Exception e) {
+            System.err.println("Error handling resignation: " + e.getMessage());
+        }
+    }
+
     private void resetTimer() {
         if (timer != null) {
             timer.cancel();
@@ -140,13 +195,16 @@ public class Game {
             String currentPlayer = chessEngine.getTurn().equals("w") ? "white" : "black";
             String winner;
             String message;
+            String result;
 
             if (chessEngine.isStalemate() || chessEngine.isDraw()) {
                 winner = "No one win";
                 message = "It's a draw!";
+                result = "draw";
             } else {
                 winner = currentPlayer.equals("white") ? "Player-2(Black)" : "Player-1(White)";
                 message = null;
+                result = currentPlayer.equals("white") ? "player2_win" : "player1_win";
             }
 
             String gameOverMessage1 = objectMapper.writeValueAsString(Map.of(
@@ -170,6 +228,11 @@ public class Game {
 
             if (timer != null) {
                 timer.cancel();
+            }
+
+            // Update ELO and stats
+            if (gameManager != null) {
+                gameManager.updatePlayerStatsAndElo(player1, player2, result, gameId);
             }
 
         } catch (Exception e) {

@@ -6,4 +6,5 @@ public class Messages {
     public static final String GAME_OVER = "game_over";
     public static final String SEND_GAME_REQUEST = "send_game_request";
     public static final String ACCEPT_GAME_REQUEST = "accept_game_request";
+    public static final String RESIGN = "resign";
 }
