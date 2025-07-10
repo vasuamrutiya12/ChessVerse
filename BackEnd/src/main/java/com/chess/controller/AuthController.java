@@ -13,6 +13,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -149,13 +151,22 @@ public class AuthController {
 
     @GetMapping("/player-stats/{email}")
     public ResponseEntity<?> getPlayerStats(@PathVariable String email) {
+        try {
+            // Decode the email parameter to handle URL encoding
+            email = URLDecoder.decode(email, StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body(Map.of("message", "Invalid email format"));
+        }
+        
         Optional<User> userOpt = userRepository.findByEmail(email);
         if (userOpt.isEmpty()) {
             return ResponseEntity.status(404).body(Map.of("message", "User not found"));
         }
+        
         User user = userOpt.get();
         int totalGames = user.getWins() + user.getLosses() + user.getDraws();
         double winRate = totalGames > 0 ? (double) user.getWins() / totalGames : 0.0;
+        
         Map<String, Object> stats = Map.of(
             "name", user.getName(),
             "email", user.getEmail(),
@@ -168,6 +179,7 @@ public class AuthController {
             "currentStreak", user.getCurrentStreak(),
             "gameHistory", user.getGameHistory()
         );
+        
         return ResponseEntity.ok(stats);
     }
 

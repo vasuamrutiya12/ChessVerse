@@ -28,15 +28,30 @@ const PlayerStats: React.FC<PlayerStatsProps> = ({ email }) => {
       return;
     }
 
-    fetch(`http://localhost:3000/api/player-stats/${encodeURIComponent(email)}`, {
+    setLoading(true);
+    setError(null);
+    
+    fetch(`http://localhost:3000/api/player-stats/${encodeURIComponent(email.trim())}`, {
       credentials: 'include'
     })
       .then(res => {
-        if (!res.ok) throw new Error('Failed to fetch player stats');
+        if (!res.ok) {
+          if (res.status === 404) {
+            throw new Error('Player not found');
+          }
+          throw new Error('Failed to fetch player stats');
+        }
         return res.json();
       })
-      .then(setData)
-      .catch(e => setError(e.message))
+      .then(data => {
+        setData(data);
+        setError(null);
+      })
+      .catch(e => {
+        console.error('Error fetching player stats:', e);
+        setError(e.message);
+        setData(null);
+      })
       .finally(() => setLoading(false));
   }, [email]);
 

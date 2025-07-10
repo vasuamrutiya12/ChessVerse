@@ -178,20 +178,21 @@ export const Landing = () => {
                                     type="email"
                                     placeholder="Enter player email..."
                                     value={selectedPlayerEmail}
-                                    onChange={(e) => setSelectedPlayerEmail(e.target.value)}
+                                    onChange={(e) => setSelectedPlayerEmail(e.target.value.trim())}
                                     className="flex-1 px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                                     onKeyPress={(e) => {
                                         if (e.key === 'Enter' && selectedPlayerEmail.trim()) {
-                                            // Trigger stats display by keeping the email in state
+                                            // Stats will display automatically when email is set
                                         }
                                     }}
                                 />
                                 <Button
                                     onClick={() => {
-                                        // The stats will show automatically when selectedPlayerEmail is set
-                                        // This button just ensures the input is not empty
                                         if (!selectedPlayerEmail.trim()) {
                                             alert('Please enter a valid email address');
+                                        } else {
+                                            // Force re-render of PlayerStats component
+                                            setSelectedPlayerEmail(selectedPlayerEmail.trim());
                                         }
                                     }}
                                     variant="outline"
@@ -214,7 +215,7 @@ export const Landing = () => {
                             )}
                         </div>
                         
-                        {selectedPlayerEmail.trim() && (
+                        {selectedPlayerEmail && (
                             <PlayerStats email={selectedPlayerEmail} />
                         )}
                     </div>
