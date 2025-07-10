@@ -33,7 +33,7 @@ public class Game {
         this.player2 = player2;
         this.chessEngine = new ChessEngine();
         this.isYourTurn = true;
-        this.gameId = gameId;
+        this.gameId = (gameId != null) ? gameId : generateGameId(); // <-- Fix here
         this.gameManager = gameManager;
 
         initializeGame();
@@ -45,7 +45,7 @@ public class Game {
             String player1Email = getPlayerEmailFromSession(player1);
             String player2Email = getPlayerEmailFromSession(player2);
             
-            System.out.println("Initializing game between: " + player1Email + " and " + player2Email);
+            System.out.println("Initializing game between: " + player1Email + " and " + player2Email + " with gameId: " + gameId);
             
             // Send initial game state to both players
             String player1Message = objectMapper.writeValueAsString(Map.of(
