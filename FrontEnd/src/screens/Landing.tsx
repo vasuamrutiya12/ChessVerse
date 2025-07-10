@@ -13,6 +13,7 @@ export const Landing = () => {
     const { isAuthenticated, loading, userdetails, handleGoogleLogin } = useAuth();
     const [showAddFriendPopup, setShowAddFriendPopup] = useState(false);
     const [showFriendRequestsPopup, setShowFriendRequestsPopup] = useState(false);
+    const [selectedPlayerEmail, setSelectedPlayerEmail] = useState<string>('');
 
     if (loading) {
         return (
@@ -154,11 +155,40 @@ export const Landing = () => {
                                 </div>
                             </div>
                         )}
-                        <Leaderboard />
-                        {/* Example: show stats for a sample user (replace with actual email as needed) */}
-                        <PlayerStats email="sample@email.com" />
                     </div>
                 </div>
+                
+                {/* Leaderboard and Player Stats Section */}
+                {isAuthenticated && (
+                    <div className="mt-16 space-y-8">
+                        <Leaderboard />
+                        
+                        {/* Player Stats Input */}
+                        <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50">
+                            <h3 className="text-xl font-bold text-white mb-4">View Player Statistics</h3>
+                            <div className="flex gap-3">
+                                <input
+                                    type="email"
+                                    placeholder="Enter player email..."
+                                    value={selectedPlayerEmail}
+                                    onChange={(e) => setSelectedPlayerEmail(e.target.value)}
+                                    className="flex-1 px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                />
+                                <Button
+                                    onClick={() => setSelectedPlayerEmail(userdetails?.user?.email || '')}
+                                    variant="outline"
+                                    size="md"
+                                >
+                                    My Stats
+                                </Button>
+                            </div>
+                        </div>
+                        
+                        {selectedPlayerEmail && (
+                            <PlayerStats email={selectedPlayerEmail} />
+                        )}
+                    </div>
+                )}
             </main>
 
             {/* Popups */}

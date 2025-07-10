@@ -23,7 +23,14 @@ const PlayerStats: React.FC<PlayerStatsProps> = ({ email }) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`http://localhost:8080/api/player-stats/${email}`)
+    if (!email) {
+      setLoading(false);
+      return;
+    }
+
+    fetch(`http://localhost:3000/api/player-stats/${encodeURIComponent(email)}`, {
+      credentials: 'include'
+    })
       .then(res => {
         if (!res.ok) throw new Error('Failed to fetch player stats');
         return res.json();
@@ -33,32 +40,131 @@ const PlayerStats: React.FC<PlayerStatsProps> = ({ email }) => {
       .finally(() => setLoading(false));
   }, [email]);
 
-  if (loading) return <div>Loading player stats...</div>;
-  if (error) return <div>Error: {error}</div>;
-  if (!data) return <div>No data found.</div>;
+  if (!email) {
+    return null;
+  }
+
+  if (loading) {
+    return (
+      <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50 mt-8">
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
+          <span className="ml-3 text-slate-400">Loading player stats...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50 mt-8">
+        <div className="text-center py-8">
+          <div className="text-red-400 mb-2">⚠️ Error loading player stats</div>
+          <div className="text-slate-400 text-sm">{error}</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50 mt-8">
+        <div className="text-center py-8">
+          <div className="text-slate-400">No player data found</div>
+        </div>
+      </div>
+    );
+  }
+
+  const totalGames = data.wins + data.losses + data.draws;
 
   return (
-    <div className="player-stats-container">
-      <h2>Player Stats: {data.name}</h2>
-      <ul>
-        <li><strong>Email:</strong> {data.email}</li>
-        <li><strong>ELO:</strong> {data.elo}</li>
-        <li><strong>Wins:</strong> {data.wins}</li>
-        <li><strong>Losses:</strong> {data.losses}</li>
-        <li><strong>Draws:</strong> {data.draws}</li>
-        <li><strong>Win Rate:</strong> {(data.winRate * 100).toFixed(1)}%</li>
-        <li><strong>Average Move Time:</strong> {data.averageMoveTime.toFixed(2)}s</li>
-        <li><strong>Current Streak:</strong> {data.currentStreak}</li>
-        <li><strong>Game History:</strong>
-          <ul>
-            {data.gameHistory.map((gameId, idx) => (
-              <li key={gameId}>{idx + 1}. {gameId}</li>
+    <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-700/50 mt-8">
+      <div className="flex items-center mb-6">
+        <div className="text-2xl mr-3">📊</div>
+        <h2 className="text-2xl font-bold text-white">Player Statistics</h2>
+      </div>
+
+      {/* Player Header */}
+      <div className="flex items-center space-x-4 mb-6 p-4 bg-slate-700/50 rounded-lg">
+        <div className="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center">
+          <span className="text-white font-bold text-xl">
+            {data.name.charAt(0).toUpperCase()}
+          </span>
+        </div>
+        <div>
+          <h3 className="text-xl font-bold text-white">{data.name}</h3>
+          <p className="text-slate-400">{data.email}</p>
+          <div className="flex items-center space-x-2 mt-1">
+            <span className="text-emerald-400 font-bold text-lg">{data.elo}</span>
+            <span className="text-slate-400">ELO</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="bg-slate-700/30 rounded-lg p-4 text-center">
+          <div className="text-2xl font-bold text-green-400">{data.wins}</div>
+          <div className="text-slate-400 text-sm">Wins</div>
+        </div>
+        <div className="bg-slate-700/30 rounded-lg p-4 text-center">
+          <div className="text-2xl font-bold text-red-400">{data.losses}</div>
+          <div className="text-slate-400 text-sm">Losses</div>
+        </div>
+        <div className="bg-slate-700/30 rounded-lg p-4 text-center">
+          <div className="text-2xl font-bold text-yellow-400">{data.draws}</div>
+          <div className="text-slate-400 text-sm">Draws</div>
+        </div>
+        <div className="bg-slate-700/30 rounded-lg p-4 text-center">
+          <div className="text-2xl font-bold text-blue-400">{totalGames}</div>
+          <div className="text-slate-400 text-sm">Total Games</div>
+        </div>
+      </div>
+
+      {/* Additional Stats */}
+      <div className="space-y-4">
+        <div className="flex justify-between items-center p-3 bg-slate-700/30 rounded-lg">
+          <span className="text-slate-300">Win Rate</span>
+          <span className="text-emerald-400 font-semibold">
+            {(data.winRate * 100).toFixed(1)}%
+          </span>
+        </div>
+        
+        <div className="flex justify-between items-center p-3 bg-slate-700/30 rounded-lg">
+          <span className="text-slate-300">Current Streak</span>
+          <span className={`font-semibold ${
+            data.currentStreak > 0 ? 'text-green-400' : 
+            data.currentStreak < 0 ? 'text-red-400' : 'text-slate-400'
+          }`}>
+            {data.currentStreak > 0 ? `+${data.currentStreak}` : data.currentStreak}
+          </span>
+        </div>
+        
+        <div className="flex justify-between items-center p-3 bg-slate-700/30 rounded-lg">
+          <span className="text-slate-300">Avg Move Time</span>
+          <span className="text-blue-400 font-semibold">
+            {data.averageMoveTime.toFixed(1)}s
+          </span>
+        </div>
+      </div>
+
+      {/* Game History */}
+      {data.gameHistory.length > 0 && (
+        <div className="mt-6">
+          <h4 className="text-lg font-semibold text-white mb-3">Recent Games</h4>
+          <div className="space-y-2 max-h-32 overflow-y-auto">
+            {data.gameHistory.slice(-5).reverse().map((gameId, idx) => (
+              <div key={gameId} className="flex items-center justify-between p-2 bg-slate-700/30 rounded text-sm">
+                <span className="text-slate-400">Game #{data.gameHistory.length - idx}</span>
+                <span className="text-slate-300 font-mono">{gameId}</span>
+              </div>
             ))}
-          </ul>
-        </li>
-      </ul>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-export default PlayerStats; 
+export default PlayerStats;
