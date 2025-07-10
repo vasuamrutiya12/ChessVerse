@@ -114,6 +114,22 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/auth/logout")
+    public ResponseEntity<?> logout(HttpServletResponse response) {
+        try {
+            Cookie cookie = new Cookie("auth_token", null);
+            cookie.setHttpOnly(true);
+            cookie.setSecure(false); // Set to true in production with HTTPS
+            cookie.setMaxAge(0); // Delete the cookie
+            cookie.setPath("/");
+            response.addCookie(cookie);
+
+            return ResponseEntity.ok(Map.of("success", true, "message", "Logged out successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("message", "Logout failed"));
+        }
+    }
+
     @GetMapping("/leaderboard")
     public ResponseEntity<?> getLeaderboard(@RequestParam(defaultValue = "10") int topN) {
         List<User> allUsers = userRepository.findAll();
