@@ -180,18 +180,41 @@ export const Landing = () => {
                                     value={selectedPlayerEmail}
                                     onChange={(e) => setSelectedPlayerEmail(e.target.value)}
                                     className="flex-1 px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                    onKeyPress={(e) => {
+                                        if (e.key === 'Enter' && selectedPlayerEmail.trim()) {
+                                            // Trigger stats display by keeping the email in state
+                                        }
+                                    }}
                                 />
                                 <Button
-                                    onClick={() => navigate('/profile')}
+                                    onClick={() => {
+                                        // The stats will show automatically when selectedPlayerEmail is set
+                                        // This button just ensures the input is not empty
+                                        if (!selectedPlayerEmail.trim()) {
+                                            alert('Please enter a valid email address');
+                                        }
+                                    }}
                                     variant="outline"
                                     size="md"
+                                    disabled={!selectedPlayerEmail.trim()}
                                 >
-                                    View Profile
+                                    View Stats
                                 </Button>
                             </div>
+                            {selectedPlayerEmail.trim() && (
+                                <div className="mt-3 text-sm text-slate-400">
+                                    Showing statistics for: <span className="text-emerald-400">{selectedPlayerEmail}</span>
+                                    <button 
+                                        onClick={() => setSelectedPlayerEmail('')}
+                                        className="ml-2 text-red-400 hover:text-red-300"
+                                    >
+                                        ✕ Clear
+                                    </button>
+                                </div>
+                            )}
                         </div>
                         
-                        {selectedPlayerEmail && (
+                        {selectedPlayerEmail.trim() && (
                             <PlayerStats email={selectedPlayerEmail} />
                         )}
                     </div>
