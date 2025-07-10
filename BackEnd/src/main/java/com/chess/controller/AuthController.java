@@ -34,38 +34,38 @@ public class AuthController {
     @GetMapping("/auth/check")
     public ResponseEntity<?> checkAuth(HttpServletRequest request) {
         String token = getTokenFromCookies(request);
-        
+
         if (token == null) {
             return ResponseEntity.status(401).body(Map.of("message", "No token found"));
         }
 
         try {
             if (!jwtUtil.validateToken(token) || jwtUtil.isTokenExpired(token)) {
-                return ResponseEntity.status(401).body(Map.of("message", "Invalid token"));
+                return ResponseEntity.status(401).body(Map.of("message", "Invalid or expired token"));
             }
 
             String email = jwtUtil.getEmailFromToken(token);
             Optional<User> userOpt = userRepository.findByEmail(email);
-            
+
             if (userOpt.isEmpty()) {
                 return ResponseEntity.status(401).body(Map.of("message", "User not found"));
             }
 
             User user = userOpt.get();
 
-            // Get all users except the current user
+            // Get all other users
             List<String> allUsers = userRepository.findAllEmailsExcept(email)
                     .stream()
                     .map(User::getEmail)
                     .collect(Collectors.toList());
 
-            // Filter out users who are already in friend_requests or friend_list
+            // Exclude already added friends or pending requests
             List<String> availableUsers = allUsers.stream()
-                    .filter(userEmail -> !user.getFriendRequests().contains(userEmail) && 
-                                       !user.getFriendList().contains(userEmail))
+                    .filter(userEmail -> !user.getFriendRequests().contains(userEmail)
+                            && !user.getFriendList().contains(userEmail))
                     .collect(Collectors.toList());
 
-            // Filter out users from friend_requests who are already in friend_list
+            // Filter out redundant friend requests
             List<String> filteredFriendRequests = user.getFriendRequests().stream()
                     .filter(userEmail -> !user.getFriendList().contains(userEmail))
                     .collect(Collectors.toList());
@@ -78,8 +78,7 @@ public class AuthController {
                     user.getGameRequests()
             );
 
-            AuthResponse response = new AuthResponse(true, availableUsers, userInfo);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(new AuthResponse(true, availableUsers, userInfo));
 
         } catch (Exception e) {
             return ResponseEntity.status(401).body(Map.of("message", "Invalid token"));
@@ -90,23 +89,25 @@ public class AuthController {
     public ResponseEntity<?> googleAuth(@RequestBody AuthRequest authRequest, HttpServletResponse response) {
         try {
             Optional<User> existingUser = userRepository.findByEmail(authRequest.getEmail());
-            User user;
-
-            if (existingUser.isEmpty()) {
-                user = new User(authRequest.getName(), authRequest.getEmail());
-                userRepository.save(user);
-            } else {
-                user = existingUser.get();
-            }
+            User user = existingUser.orElseGet(() -> {
+                User newUser = new User(authRequest.getName(), authRequest.getEmail());
+                return userRepository.save(newUser);
+            });
 
             String token = jwtUtil.generateToken(authRequest.getEmail());
-            
+
             Cookie cookie = new Cookie("auth_token", token);
             cookie.setHttpOnly(true);
-            cookie.setSecure(false); // Set to true in production with HTTPS
+            cookie.setSecure(true); // ✅ Must be true in production (HTTPS)
             cookie.setMaxAge(2 * 24 * 60 * 60); // 2 days
             cookie.setPath("/");
-            response.addCookie(cookie);
+
+            // Manually add SameSite=None
+            response.setHeader("Set-Cookie", String.format(
+                    "auth_token=%s; Max-Age=%d; Path=/; Secure; HttpOnly; SameSite=None",
+                    token,
+                    2 * 24 * 60 * 60
+            ));
 
             return ResponseEntity.ok(Map.of("success", true));
 
@@ -114,6 +115,17 @@ public class AuthController {
             e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of("message", "Server error: " + e.getMessage()));
         }
+    }
+
+    private String getTokenFromCookies(HttpServletRequest request) {
+        if (request.getCookies() == null) return null;
+
+        for (Cookie cookie : request.getCookies()) {
+            if ("auth_token".equals(cookie.getName())) {
+                return cookie.getValue();
+            }
+        }
+        return null;
     }
 
     @PostMapping("/auth/logout")
@@ -183,14 +195,4 @@ public class AuthController {
         return ResponseEntity.ok(stats);
     }
 
-    private String getTokenFromCookies(HttpServletRequest request) {
-        if (request.getCookies() != null) {
-            for (Cookie cookie : request.getCookies()) {
-                if ("auth_token".equals(cookie.getName())) {
-                    return cookie.getValue();
-                }
-            }
-        }
-        return null;
-    }
 }
