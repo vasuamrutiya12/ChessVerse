@@ -5,6 +5,8 @@ import { useAuth } from "../hooks/useAuth";
 import { useState } from "react";
 import AddFriendPopup from "../components/AddFriendPopup";
 import FriendRequestsPopup from "../components/FriendRequestsPopup";
+import Leaderboard from '../components/Leaderboard';
+import PlayerStats from '../components/PlayerStats';
 
 export const Landing = () => {
     const navigate = useNavigate();
@@ -152,6 +154,9 @@ export const Landing = () => {
                                 </div>
                             </div>
                         )}
+                        <Leaderboard />
+                        {/* Example: show stats for a sample user (replace with actual email as needed) */}
+                        <PlayerStats email="sample@email.com" />
                     </div>
                 </div>
             </main>

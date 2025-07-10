@@ -6,13 +6,14 @@ import { useSocket } from "../hooks/useSocket"
 import { Chess, Square } from "chess.js";
 import { GameOverPopup } from "../components/GameOverPopup";
 import { useAuth } from "../hooks/useAuth";
-import GameRequestsPopup from "../components/GameRequestsPopup";
+import { GameRequests } from "../components/GameRequests";
 
 export const INIT_GAME = "init_game";
 export const MOVE = "move";
 export const GAME_OVER = "game_over";
 export const SEND_GAME_REQUEST = "send_game_request";
 export const ACCEPT_GAME_REQUEST = "accept_game_request";
+export const RESIGN = "resign";
 
 export const Game = () => {
     const navigate = useNavigate();
@@ -27,7 +28,6 @@ export const Game = () => {
     const [showFriendsList, setShowFriendsList] = useState(true);
     const { userdetails } = useAuth();
     const [gameId, setGameId] = useState<string | null>(null);
-    const [showGameRequests, setShowGameRequests] = useState(false);
     const [socket, setSocket] = useState<WebSocket | null>(null);
     const [isWaiting, setIsWaiting] = useState(() => {
         return localStorage.getItem('isWaiting') === 'true';
@@ -209,6 +209,23 @@ export const Game = () => {
                             <h1 className="text-2xl font-bold text-white">ChessMaster</h1>
                         </div>
                         <div className="flex items-center space-x-4">
+                            {started && (
+                                <Button 
+                                    onClick={() => {
+                                        if (socket) {
+                                            socket.send(JSON.stringify({
+                                                type: RESIGN,
+                                                payload: {
+                                                    gameId,
+                                                }
+                                            }));
+                                        }
+                                    }}
+                                    className="bg-red-600 hover:bg-red-700 text-white"
+                                >
+                                    Resign
+                                </Button>
+                            )}
                             {started && playerColor && (
                                 <div className="flex items-center space-x-3">
                                     <div className={`px-3 py-1 rounded-full text-sm font-medium ${
@@ -301,59 +318,70 @@ export const Game = () => {
                             )}
 
                             {/* Friends List */}
-                            {!started && showFriendsList && (
+                            {!started && (
                                 <div className="mt-6">
-                                    <div className="flex justify-between items-center mb-4">
-                                        <h3 className="text-lg font-semibold text-white">Friends</h3>
+                                    <div className="flex p-3 justify-between items-baseline mb-4">
+                                        <h3 className="text-lg  font-semibold text-white">
+                                            {showFriendsList ? "Friends" : "Game Requests"}
+                                        </h3>
                                         <Button 
                                             variant="outline"
                                             size="sm"
-                                            onClick={() => setShowGameRequests(true)}
+                                            onClick={() => setShowFriendsList(!showFriendsList)}
                                         >
-                                            📨 Requests
-                                            {userdetails?.user?.game_requests?.length > 0 && (
-                                                <span className="ml-2 bg-red-500 text-white text-xs rounded-full px-2 py-1">
-                                                    {userdetails.user.game_requests.length}
-                                                </span>
-                                            )}
+                                            {showFriendsList ? (
+                                                <>
+                                                    📜 Requests
+                                                    {userdetails?.user?.game_requests?.length > 0 && (
+                                                        <span className="ml-2 bg-red-500 text-white text-xs rounded-full px-2 py-1">
+                                                            {userdetails.user.game_requests.length}
+                                                        </span>
+                                                    )}
+                                                </>
+                                            ) : "Friends"}
                                         </Button>
                                     </div>
                                     
-                                    <div className="space-y-2 max-h-64 overflow-y-auto">
-                                        {userdetails?.user?.friend_list?.length > 0 ? (
-                                            userdetails.user.friend_list.map((friend: string, index: number) => (
-                                                <div key={index} className="flex items-center justify-between bg-slate-700/50 rounded-lg p-3 border border-slate-600/50">
-                                                    <div className="flex items-center space-x-3">
-                                                        <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center">
-                                                            <span className="text-white font-semibold text-sm">
-                                                                {friend.charAt(0).toUpperCase()}
-                                                            </span>
+                                    {showFriendsList ? (
+                                        <div className="space-y-2 max-h-64 overflow-y-auto">
+                                            {userdetails?.user?.friend_list?.length > 0 ? (
+                                                userdetails.user.friend_list.map((friend: string, index: number) => (
+                                                    <div key={index} className="flex items-center justify-between bg-slate-700/50 rounded-lg p-2 px-3 border border-slate-600/50">
+                                                        <div className="flex items-center space-x-3 min-w-0">
+                                                            <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                                                <span className="text-white font-semibold text-sm">
+                                                                    {friend.charAt(0).toUpperCase()}
+                                                                </span>
+                                                            </div>
+                                                            <span className="text-white text-sm truncate">{friend}</span>
                                                         </div>
-                                                        <span className="text-white text-sm">{friend}</span>
+                                                        <Button 
+                                                            variant="success"
+                                                            size="sm"
+                                                            onClick={() => handleFriendGameRequest(friend)}
+                                                            className="flex-shrink-0"
+                                                        >
+                                                            ⚔️
+                                                        </Button>
                                                     </div>
+                                                ))
+                                            ) : (
+                                                <div className="text-center py-8">
+                                                    <div className="text-slate-400 text-sm">No friends yet</div>
                                                     <Button 
-                                                        variant="success"
+                                                        variant="outline"
                                                         size="sm"
-                                                        onClick={() => handleFriendGameRequest(friend)}
+                                                        onClick={() => navigate('/')}
+                                                        className="mt-2"
                                                     >
-                                                        ⚔️
+                                                        Add Friends
                                                     </Button>
                                                 </div>
-                                            ))
-                                        ) : (
-                                            <div className="text-center py-8">
-                                                <div className="text-slate-400 text-sm">No friends yet</div>
-                                                <Button 
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => navigate('/')}
-                                                    className="mt-2"
-                                                >
-                                                    Add Friends
-                                                </Button>
-                                            </div>
-                                        )}
-                                    </div>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <GameRequests socket={socket} />
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -368,9 +396,6 @@ export const Game = () => {
                     message={gameOver.msg} 
                     onclose={() => navigate('/')} 
                 />
-            )}
-            {showGameRequests && (
-                <GameRequestsPopup onClose={() => setShowGameRequests(false)} />
             )}
         </div>
     );
