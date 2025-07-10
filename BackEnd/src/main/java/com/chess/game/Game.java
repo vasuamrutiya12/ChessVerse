@@ -42,6 +42,11 @@ public class Game {
 
     private void initializeGame() {
         try {
+            String player1Email = getPlayerEmailFromSession(player1);
+            String player2Email = getPlayerEmailFromSession(player2);
+            
+            System.out.println("Initializing game between: " + player1Email + " and " + player2Email);
+            
             // Send initial game state to both players
             String player1Message = objectMapper.writeValueAsString(Map.of(
                 "type", Messages.INIT_GAME,
@@ -49,7 +54,7 @@ public class Game {
                 "payload", Map.of(
                     "color", "white",
                     "gameId", gameId,
-                    "opponent", getPlayerEmail(player2)
+                    "opponent", player2Email != null ? player2Email : "Unknown Player"
                 )
             ));
 
@@ -59,7 +64,7 @@ public class Game {
                 "payload", Map.of(
                     "color", "black",
                     "gameId", gameId,
-                    "opponent", getPlayerEmail(player1)
+                    "opponent", player1Email != null ? player1Email : "Unknown Player"
                 )
             ));
 
@@ -68,6 +73,7 @@ public class Game {
 
         } catch (Exception e) {
             System.err.println("Error initializing game: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -240,10 +246,22 @@ public class Game {
         }
     }
 
-    private String getPlayerEmail(WebSocketSession session) {
-        // This would need to be implemented to extract email from session
-        // For now, return a placeholder
-        return "player@example.com";
+    private String getPlayerEmailFromSession(WebSocketSession session) {
+        try {
+            if (session != null && session.getUri() != null && session.getUri().getQuery() != null) {
+                String query = session.getUri().getQuery();
+                String[] params = query.split("&");
+                for (String param : params) {
+                    String[] keyValue = param.split("=");
+                    if (keyValue.length == 2 && "email".equals(keyValue[0])) {
+                        return java.net.URLDecoder.decode(keyValue[1], java.nio.charset.StandardCharsets.UTF_8);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error extracting email from session: " + e.getMessage());
+        }
+        return null;
     }
 
     private static String generateGameId() {

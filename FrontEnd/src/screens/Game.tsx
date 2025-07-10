@@ -36,8 +36,20 @@ export const Game = () => {
     useEffect(() => {
         if (!userdetails?.user?.email) return;
 
-        const ws = new WebSocket(`ws://localhost:3000?email=${userdetails.user.email}`);
+        const encodedEmail = encodeURIComponent(userdetails.user.email);
+        const wsUrl = `ws://localhost:3000?email=${encodedEmail}`;
+        console.log("Connecting to WebSocket:", wsUrl);
+        
+        const ws = new WebSocket(wsUrl);
         setSocket(ws);
+
+        ws.onopen = () => {
+            console.log("WebSocket connection opened successfully");
+        };
+
+        ws.onerror = (error) => {
+            console.error("WebSocket error:", error);
+        };
 
         ws.onmessage = (event) => {
             const message = JSON.parse(event.data);
@@ -45,6 +57,7 @@ export const Game = () => {
 
             switch (message.type) {
                 case INIT_GAME:
+                    console.log("Game initialized:", message.payload);
                     setIsYourTurn(message.isYourTurn);
                     setPlayerColor(message.payload.color);
                     setGameId(message.payload.gameId);
@@ -52,7 +65,6 @@ export const Game = () => {
                     setBoard(chess.board());
                     setIsWaiting(false);
                     localStorage.removeItem('isWaiting');
-                    console.log("Game initialized, playing as", message.payload.color);
                     break;
                 case MOVE:
                     setIsYourTurn(message.isYourTurn);
@@ -76,6 +88,7 @@ export const Game = () => {
 
         return () => {
             if (ws.readyState === WebSocket.OPEN) {
+                console.log("Closing WebSocket connection");
                 ws.close();
             }
         };

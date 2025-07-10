@@ -23,16 +23,19 @@ public class GameWebSocketHandler implements WebSocketHandler {
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         try {
             String userEmail = extractUserEmailFromSession(session);
-            System.out.println("New connection from user: " + userEmail);
+            System.out.println("New WebSocket connection established");
+            System.out.println("Session URI: " + session.getUri());
+            System.out.println("Extracted user email: " + userEmail);
             
             if (userEmail != null) {
                 gameManager.addUser(session, userEmail);
             } else {
-                System.out.println("Connection attempt without email");
+                System.out.println("Warning: Connection attempt without email, adding with null email");
                 gameManager.addUser(session, null);
             }
         } catch (Exception e) {
             System.err.println("Error handling WebSocket connection: " + e.getMessage());
+            e.printStackTrace();
             gameManager.addUser(session, null);
         }
     }
@@ -63,20 +66,30 @@ public class GameWebSocketHandler implements WebSocketHandler {
 
     private String extractUserEmailFromSession(WebSocketSession session) {
         try {
+            System.out.println("Extracting email from session...");
             URI uri = session.getUri();
+            System.out.println("Session URI: " + uri);
+            
             if (uri != null && uri.getQuery() != null) {
                 String query = uri.getQuery();
+                System.out.println("Query string: " + query);
                 String[] params = query.split("&");
                 for (String param : params) {
                     String[] keyValue = param.split("=");
                     if (keyValue.length == 2 && "email".equals(keyValue[0])) {
-                        return URLDecoder.decode(keyValue[1], StandardCharsets.UTF_8);
+                        String email = URLDecoder.decode(keyValue[1], StandardCharsets.UTF_8);
+                        System.out.println("Found email parameter: " + email);
+                        return email;
                     }
                 }
+            } else {
+                System.out.println("No query string found in URI");
             }
         } catch (Exception e) {
             System.err.println("Error extracting email from session: " + e.getMessage());
+            e.printStackTrace();
         }
+        System.out.println("No email found in session");
         return null;
     }
 }

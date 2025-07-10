@@ -28,6 +28,8 @@ public class GameManager {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public void addUser(WebSocketSession session, String userEmail) {
+        System.out.println("Adding user to GameManager: " + userEmail);
+        
         // If user has an email, remove any existing socket connections for this user
         if (userEmail != null) {
             // Remove old socket from users array
@@ -44,6 +46,7 @@ public class GameManager {
         
         WebSocketSessionWithUser userSession = new WebSocketSessionWithUser(session, userEmail);
         users.add(userSession);
+        System.out.println("Total users connected: " + users.size());
     }
 
     public void removeUser(WebSocketSession session) {
@@ -66,11 +69,14 @@ public class GameManager {
             
             switch (type) {
                 case Messages.INIT_GAME:
+                    System.out.println("Handling INIT_GAME request");
                     if (pendingUser != null) {
+                        System.out.println("Found pending user, creating game");
                         Game game = new Game(pendingUser, session, null, this);
                         games.add(game);
                         pendingUser = null;
                     } else {
+                        System.out.println("No pending user, setting current session as pending");
                         pendingUser = session;
                     }
                     break;
