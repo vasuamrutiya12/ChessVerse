@@ -7,6 +7,7 @@ import { Chess, Square } from "chess.js";
 import { GameOverPopup } from "../components/GameOverPopup";
 import { useAuth } from "../hooks/useAuth";
 import { GameRequests } from "../components/GameRequests";
+import { apiFetch } from '../api';
 
 export const INIT_GAME = "init_game";
 export const MOVE = "move";
@@ -114,7 +115,7 @@ export const Game = () => {
 
     const handleFriendGameRequest = async (friendEmail: string) => {
         try {
-            const response = await fetch('https://chessverse-production.up.railway.app/game/sendgamerequest', {
+            const response = await apiFetch('/game/sendgamerequest', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

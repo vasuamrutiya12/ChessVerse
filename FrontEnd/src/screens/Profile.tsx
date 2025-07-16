@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/Button';
 import { useAuth } from '../hooks/useAuth';
 import PlayerStats from '../components/PlayerStats';
+import { apiFetch } from '../api';
 
 export const Profile = () => {
     const navigate = useNavigate();
@@ -12,7 +13,7 @@ export const Profile = () => {
     const handleLogout = async () => {
         try {
             // Clear the auth cookie by making a request to logout endpoint
-            await fetch('https://chessverse-production.up.railway.app/api/auth/logout', {
+            await apiFetch('/api/auth/logout', {
                 method: 'POST',
                 credentials: 'include'
             });

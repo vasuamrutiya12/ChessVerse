@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from './Button';
 import { useAuth } from '../hooks/useAuth';
+import { apiFetch } from '../api';
 
 interface GameRequestsProps {
     socket: WebSocket | null;
@@ -14,7 +15,7 @@ export const GameRequests: React.FC<GameRequestsProps> = ({ socket }) => {
         if (!userdetails?.user?.email) return;
 
         try {
-            const response = await fetch('https://chessverse-production.up.railway.app/game/handlegamerequest', {
+            const response = await apiFetch('/game/handlegamerequest', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

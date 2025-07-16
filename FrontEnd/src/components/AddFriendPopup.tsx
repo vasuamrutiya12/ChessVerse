@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from './Button';
 import { useAuth } from '../hooks/useAuth';
+import { apiFetch } from '../api';
 
 interface AddFriendPopupProps {
     emails: string[];
@@ -20,32 +21,24 @@ const AddFriendPopup: React.FC<AddFriendPopupProps> = ({ emails, onClose }) => {
         if (!userdetails) return;
         
         setLoading(true);
-        const requestData = {
-            from: userdetails.user.email,
-            to: email
-        };
+        const response = await apiFetch('/game/sendfriendrequest', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+                userEmail: userdetails.user.email,
+                friendEmail: email,
+                action: 'send_friend_request'
+            })
+        });
 
-        try {
-            const response = await fetch('https://chessverse-production.up.railway.app/game/sendfriendrequest', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                credentials: 'include',
-                body: JSON.stringify(requestData)
-            });
-
-            if (response.ok) {
-                console.log('Friend request sent successfully');
-                // Show success feedback
-            } else {
-                console.error('Failed to send friend request');
-            }
-        } catch (error) {
-            console.error('Error sending friend request:', error);
-        } finally {
-            setLoading(false);
+        if (response.ok) {
+            console.log('Friend request sent successfully');
+            // Show success feedback
+        } else {
+            console.error('Failed to send friend request');
         }
     };
 

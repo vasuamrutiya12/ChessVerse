@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { jwtDecode } from 'jwt-decode';
+import { apiFetch } from '../api';
 
 // interface User {
 //     email: string;
@@ -17,7 +18,7 @@ export const useAuth = () => {
 
     const checkAuth = async () => {
         try {
-            const response = await fetch('https://chessverse-production.up.railway.app/api/auth/check', {
+            const response = await apiFetch('/api/auth/check', {
                 credentials: 'include'
             });
             
@@ -41,16 +42,13 @@ export const useAuth = () => {
     const handleGoogleLogin = async (credential: string) => {
         try {
             const decoded = jwtDecode(credential);
-            const response = await fetch('https://chessverse-production.up.railway.app/api/auth/google', {
+            const response = await apiFetch('/api/auth/google', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
                 },
                 credentials: 'include',
-                body: JSON.stringify({
-                    email: (decoded as any).email,
-                    name: (decoded as any).name
-                })
+                body: JSON.stringify({ token: credential })
             });
 
             if (response.ok) {

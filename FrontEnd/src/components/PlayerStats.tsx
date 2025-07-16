@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { apiFetch } from '../api';
 
 interface PlayerStatsProps {
   email: string;
@@ -31,18 +32,10 @@ const PlayerStats: React.FC<PlayerStatsProps> = ({ email }) => {
     setLoading(true);
     setError(null);
     
-    fetch(`https://chessverse-production.up.railway.app/api/player-stats/${encodeURIComponent(email.trim())}`, {
+    apiFetch(`/api/player-stats/${encodeURIComponent(email.trim())}`, {
       credentials: 'include'
     })
-      .then(res => {
-        if (!res.ok) {
-          if (res.status === 404) {
-            throw new Error('Player not found');
-          }
-          throw new Error('Failed to fetch player stats');
-        }
-        return res.json();
-      })
+      .then(res => res.json())
       .then(data => {
         setData(data);
         setError(null);
@@ -51,6 +44,7 @@ const PlayerStats: React.FC<PlayerStatsProps> = ({ email }) => {
         console.error('Error fetching player stats:', e);
         setError(e.message);
         setData(null);
+        
       })
       .finally(() => setLoading(false));
   }, [email]);

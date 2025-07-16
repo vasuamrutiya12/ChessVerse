@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from './Button';
 import { useAuth } from '../hooks/useAuth';
+import { apiFetch } from '../api';
 
 interface FriendRequestsPopupProps {
     onClose: () => void;
@@ -20,7 +21,7 @@ const FriendRequestsPopup: React.FC<FriendRequestsPopupProps> = ({ onClose }) =>
 
         setLoading(`${email}-${action}`);
         try {
-            const response = await fetch('https://chessverse-production.up.railway.app/game/handlefriendrequest', {
+            const response = await apiFetch('/game/handlefriendrequest', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
