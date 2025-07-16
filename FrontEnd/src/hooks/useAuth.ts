@@ -42,22 +42,28 @@ export const useAuth = () => {
     const handleGoogleLogin = async (credential: string) => {
         try {
             const decoded = jwtDecode(credential);
+            console.log("Decoded Google credential:", decoded);
+            
             const response = await apiFetch('/api/auth/google', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 credentials: 'include',
-                body: JSON.stringify({ token: credential })
+                body: JSON.stringify({ 
+                    email: (decoded as any).email,
+                    name: (decoded as any).name 
+                })
             });
 
             if (response.ok) {
-                setIsAuthenticated(true);
-                setUserdetails({
-                    email: (decoded as any).email,
-                    name: (decoded as any).name
-                });
-                checkAuth();
+                // Wait a moment for cookie to be set, then check auth
+                setTimeout(() => {
+                    checkAuth();
+                }, 100);
+            } else {
+                const errorData = await response.json();
+                console.error('Login failed:', errorData);
             }
         } catch (error) {
             console.error('Authentication error:', error);

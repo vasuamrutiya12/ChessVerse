@@ -1,7 +1,11 @@
 // src/api.ts
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 export function apiFetch(path: string, options?: RequestInit) {
-  return fetch(`${BASE_URL}${path}`, options);
+  return fetch(`${BASE_URL}${path}`, {
+    ...options,
+    credentials: 'include', // Always include credentials
+  });
 }
 
 // If you use axios:

@@ -28,6 +28,8 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/leaderboard").permitAll()
+                .requestMatchers("/api/player-stats/**").permitAll()
                 .requestMatchers("/").permitAll()
                 .anyRequest().authenticated()
             )

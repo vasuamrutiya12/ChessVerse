@@ -88,6 +88,11 @@ public class AuthController {
     @PostMapping("/auth/google")
     public ResponseEntity<?> googleAuth(@RequestBody AuthRequest authRequest, HttpServletResponse response) {
         try {
+            // Validate input
+            if (authRequest.getEmail() == null || authRequest.getName() == null) {
+                return ResponseEntity.status(400).body(Map.of("message", "Email and name are required"));
+            }
+            
             Optional<User> existingUser = userRepository.findByEmail(authRequest.getEmail());
             User user = existingUser.orElseGet(() -> {
                 User newUser = new User(authRequest.getName(), authRequest.getEmail());
@@ -98,16 +103,11 @@ public class AuthController {
 
             Cookie cookie = new Cookie("auth_token", token);
             cookie.setHttpOnly(true);
-            cookie.setSecure(true); // ✅ Must be true in production (HTTPS)
+            cookie.setSecure(false); // Set to false for localhost development
             cookie.setMaxAge(2 * 24 * 60 * 60); // 2 days
             cookie.setPath("/");
 
-            // Manually add SameSite=None
-            response.setHeader("Set-Cookie", String.format(
-                    "auth_token=%s; Max-Age=%d; Path=/; Secure; HttpOnly; SameSite=None",
-                    token,
-                    2 * 24 * 60 * 60
-            ));
+            response.addCookie(cookie);
 
             return ResponseEntity.ok(Map.of("success", true));
 

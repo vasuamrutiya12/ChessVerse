@@ -28,14 +28,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, 
                                   FilterChain filterChain) throws ServletException, IOException {
         
+        // Skip authentication for public endpoints
+        String path = request.getRequestURI();
+        if (path.startsWith("/api/auth/") || path.equals("/")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+        
         String token = getTokenFromCookies(request);
         logger.debug("Extracted JWT token: {}", token);
         
         if (token != null && jwtUtil.validateToken(token) && !jwtUtil.isTokenExpired(token)) {
             String email = jwtUtil.getEmailFromToken(token);
+            logger.debug("Authenticated user email: {}", email);
             UsernamePasswordAuthenticationToken authentication = 
                 new UsernamePasswordAuthenticationToken(email, null, new ArrayList<>());
             SecurityContextHolder.getContext().setAuthentication(authentication);
+        } else {
+            logger.debug("No valid token found");
         }
         
         filterChain.doFilter(request, response);
