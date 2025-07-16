@@ -2,6 +2,7 @@ package com.chess.service;
 
 import com.chess.game.Move;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -11,13 +12,25 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class ChessEngineService {
     
-    private static final String STOCKFISH_PATH = "stockfish"; // Adjust path as needed
-    private static final int ANALYSIS_DEPTH = 15;
-    private static final int HINT_DEPTH = 10;
+    @Value("${stockfish.path:C:\\stockfish\\stockfish-windows-x86-64-avx2.exe}")
+    private String stockfishPath;
+    
+    @Value("${stockfish.analysis.depth:15}")
+    private int analysisDepth;
+    
+    @Value("${stockfish.hint.depth:10}")
+    private int hintDepth;
     
     public String getBestMove(String fen, int depth) {
         try {
-            Process stockfish = new ProcessBuilder(STOCKFISH_PATH).start();
+            // Validate Stockfish path
+            File stockfishFile = new File(stockfishPath);
+            if (!stockfishFile.exists()) {
+                System.err.println("Stockfish not found at: " + stockfishPath);
+                return null;
+            }
+            
+            Process stockfish = new ProcessBuilder(stockfishPath).start();
             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(stockfish.getOutputStream()));
             BufferedReader reader = new BufferedReader(new InputStreamReader(stockfish.getInputStream()));
             
@@ -36,7 +49,7 @@ public class ChessEngineService {
             writer.flush();
             
             // Start analysis
-            writer.write("go depth " + depth + "\n");
+            writer.write("go depth " + analysisDepth + "\n");
             writer.flush();
             
             String bestMove = null;
@@ -62,7 +75,14 @@ public class ChessEngineService {
     
     public MoveAnalysis analyzeMove(String fen, String move) {
         try {
-            Process stockfish = new ProcessBuilder(STOCKFISH_PATH).start();
+            // Validate Stockfish path
+            File stockfishFile = new File(stockfishPath);
+            if (!stockfishFile.exists()) {
+                System.err.println("Stockfish not found at: " + stockfishPath);
+                return new MoveAnalysis(move, 0, 0, null, "Unknown");
+            }
+            
+            Process stockfish = new ProcessBuilder(stockfishPath).start();
             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(stockfish.getOutputStream()));
             BufferedReader reader = new BufferedReader(new InputStreamReader(stockfish.getInputStream()));
             
@@ -101,7 +121,7 @@ public class ChessEngineService {
             }
             
             // Analyze position after move
-            writer.write("position fen " + fen + " moves " + move + "\n");
+            writer.write("go depth " + analysisDepth + "\n");
             writer.flush();
             writer.write("go depth " + ANALYSIS_DEPTH + "\n");
             writer.flush();
