@@ -7,6 +7,9 @@ import { Chess, Square } from "chess.js";
 import { GameOverPopup } from "../components/GameOverPopup";
 import { useAuth } from "../hooks/useAuth";
 import { GameRequests } from "../components/GameRequests";
+import { ChatBox } from "../components/ChatBox";
+import { MoveAnalysis } from "../components/MoveAnalysis";
+import { HintSystem } from "../components/HintSystem";
 import { apiFetch } from '../api';
 
 export const INIT_GAME = "init_game";
@@ -15,6 +18,8 @@ export const GAME_OVER = "game_over";
 export const SEND_GAME_REQUEST = "send_game_request";
 export const ACCEPT_GAME_REQUEST = "accept_game_request";
 export const RESIGN = "resign";
+export const CHAT_MESSAGE = "chat_message";
+export const REQUEST_HINT = "request_hint";
 
 export const Game = () => {
     const navigate = useNavigate();
@@ -303,6 +308,16 @@ export const Game = () => {
                                     </div>
                                 </div>
                             )}
+                            
+                            {/* Hint System */}
+                            {started && (
+                                <HintSystem 
+                                    socket={socket}
+                                    isYourTurn={isYourTurn}
+                                    isGameActive={started}
+                                    isPracticeMode={false}
+                                />
+                            )}
 
                             {/* Game Controls */}
                             {!started && (
@@ -403,6 +418,19 @@ export const Game = () => {
                 </div>
             </div>
 
+            {/* Chat Box */}
+            <ChatBox 
+                socket={socket}
+                gameId={gameId}
+                currentUserEmail={userdetails?.user?.email || ''}
+                isGameActive={started}
+            />
+            
+            {/* Move Analysis */}
+            <MoveAnalysis 
+                socket={socket}
+                isGameActive={started}
+            />
             {/* Popups */}
             {gameOver && (
                 <GameOverPopup 

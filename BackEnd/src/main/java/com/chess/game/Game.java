@@ -1,6 +1,8 @@
 package com.chess.game;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.chess.service.ChessEngineService;
+import com.chess.dto.ChatMessageDto;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
@@ -19,6 +21,9 @@ public class Game {
     private String gameId;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private GameManager gameManager;
+    private ChessEngineService chessEngineService;
+    private List<ChatMessageDto> chatHistory = new ArrayList<>();
+    private List<String> moveHistory = new ArrayList<>();
 
     public Game(WebSocketSession player1, WebSocketSession player2) {
         this(player1, player2, generateGameId());
@@ -28,13 +33,14 @@ public class Game {
         this(player1, player2, gameId, null);
     }
 
-    public Game(WebSocketSession player1, WebSocketSession player2, String gameId, GameManager gameManager) {
+    public Game(WebSocketSession player1, WebSocketSession player2, String gameId, GameManager gameManager, ChessEngineService chessEngineService) {
         this.player1 = player1;
         this.player2 = player2;
         this.chessEngine = new ChessEngine();
         this.isYourTurn = true;
         this.gameId = (gameId != null) ? gameId : generateGameId(); // <-- Fix here
         this.gameManager = gameManager;
+        this.chessEngineService = chessEngineService;
 
         initializeGame();
         startTimer();
@@ -92,6 +98,31 @@ public class Game {
                 return;
             }
 
+            // Add move to history for analysis
+            moveHistory.add(move.getFrom() + move.getTo());
+            
+            // Analyze the move
+            if (chessEngineService != null) {
+                try {
+                    String fen = getCurrentFEN(); // You'll need to implement this
+                    ChessEngineService.MoveAnalysis analysis = chessEngineService.analyzeMove(fen, move.getFrom() + move.getTo());
+                    
+                    // Send move analysis to the player who made the move
+                    String analysisMessage = objectMapper.writeValueAsString(Map.of(
+                        "type", Messages.MOVE_ANALYSIS,
+                        "payload", Map.of(
+                            "move", move.getFrom() + move.getTo(),
+                            "classification", analysis.getClassification(),
+                            "bestMove", analysis.getBestMove(),
+                            "scoreDiff", analysis.getScoreAfter() - analysis.getScoreBefore()
+                        )
+                    ));
+                    
+                    socket.sendMessage(new TextMessage(analysisMessage));
+                } catch (Exception e) {
+                    System.err.println("Error analyzing move: " + e.getMessage());
+                }
+            }
             // Reset the timer for the next player
             resetTimer();
 
@@ -168,6 +199,9 @@ public class Game {
             if (gameManager != null) {
                 gameManager.updatePlayerStatsAndElo(player1, player2, result, gameId);
             }
+            
+            // Send game analysis after game ends
+            sendGameAnalysis();
 
         } catch (Exception e) {
             System.err.println("Error handling resignation: " + e.getMessage());
@@ -240,10 +274,87 @@ public class Game {
             if (gameManager != null) {
                 gameManager.updatePlayerStatsAndElo(player1, player2, result, gameId);
             }
+            
+            // Send game analysis after game ends
+            sendGameAnalysis();
 
         } catch (Exception e) {
             System.err.println("Error sending game over: " + e.getMessage());
         }
+    }
+    
+    public void sendChatMessage(WebSocketSession sender, ChatMessageDto chatMessage) {
+        try {
+            chatHistory.add(chatMessage);
+            
+            String chatMessageJson = objectMapper.writeValueAsString(Map.of(
+                "type", Messages.CHAT_MESSAGE,
+                "payload", chatMessage
+            ));
+            
+            // Send to both players
+            player1.sendMessage(new TextMessage(chatMessageJson));
+            player2.sendMessage(new TextMessage(chatMessageJson));
+            
+        } catch (Exception e) {
+            System.err.println("Error sending chat message: " + e.getMessage());
+        }
+    }
+    
+    public void sendHint(WebSocketSession requester) {
+        if (chessEngineService == null) return;
+        
+        try {
+            String fen = getCurrentFEN(); // You'll need to implement this
+            String bestMove = chessEngineService.getBestMove(fen, 10);
+            
+            if (bestMove != null) {
+                String hintMessage = objectMapper.writeValueAsString(Map.of(
+                    "type", Messages.HINT_RESPONSE,
+                    "payload", Map.of(
+                        "bestMove", bestMove,
+                        "hint", "Consider moving from " + bestMove.substring(0, 2) + " to " + bestMove.substring(2, 4)
+                    )
+                ));
+                
+                requester.sendMessage(new TextMessage(hintMessage));
+            }
+        } catch (Exception e) {
+            System.err.println("Error sending hint: " + e.getMessage());
+        }
+    }
+    
+    private void sendGameAnalysis() {
+        if (chessEngineService == null || moveHistory.isEmpty()) return;
+        
+        try {
+            ChessEngineService.GameAnalysis analysis = chessEngineService.analyzeGame(moveHistory, null);
+            
+            String analysisMessage = objectMapper.writeValueAsString(Map.of(
+                "type", Messages.GAME_ANALYSIS,
+                "payload", Map.of(
+                    "accuracy", analysis.getAccuracy(),
+                    "blunders", analysis.getBlunders(),
+                    "mistakes", analysis.getMistakes(),
+                    "inaccuracies", analysis.getInaccuracies(),
+                    "excellent", analysis.getExcellent(),
+                    "good", analysis.getGood(),
+                    "moves", analysis.getMoves()
+                )
+            ));
+            
+            player1.sendMessage(new TextMessage(analysisMessage));
+            player2.sendMessage(new TextMessage(analysisMessage));
+            
+        } catch (Exception e) {
+            System.err.println("Error sending game analysis: " + e.getMessage());
+        }
+    }
+    
+    private String getCurrentFEN() {
+        // This is a simplified implementation
+        // You'll need to implement proper FEN generation from your chess engine
+        return "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     }
 
     private String getPlayerEmailFromSession(WebSocketSession session) {

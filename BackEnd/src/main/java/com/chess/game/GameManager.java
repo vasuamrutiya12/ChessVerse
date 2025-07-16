@@ -2,6 +2,8 @@ package com.chess.game;
 
 import com.chess.model.User;
 import com.chess.repository.UserRepository;
+import com.chess.service.ChessEngineService;
+import com.chess.dto.ChatMessageDto;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +26,9 @@ public class GameManager {
     
     @Autowired
     private UserRepository userRepository;
+    
+    @Autowired
+    private ChessEngineService chessEngineService;
     
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -72,7 +77,7 @@ public class GameManager {
                     System.out.println("Handling INIT_GAME request");
                     if (pendingUser != null) {
                         System.out.println("Found pending user, creating game");
-                        Game game = new Game(pendingUser, session, null, this);
+                        Game game = new Game(pendingUser, session, null, this, chessEngineService);
                         games.add(game);
                         pendingUser = null;
                     } else {
@@ -111,6 +116,14 @@ public class GameManager {
 
                 case Messages.RESIGN:
                     handleResign(session);
+                    break;
+                   
+                case Messages.CHAT_MESSAGE:
+                    handleChatMessage(session, message);
+                    break;
+                    
+                case Messages.REQUEST_HINT:
+                    handleHintRequest(session);
                     break;
             }
         } catch (Exception e) {
@@ -163,7 +176,7 @@ public class GameManager {
             }
 
             // Create new game instance
-            Game friendGame = new Game(player1Session.getSession(), player2Session.getSession(), gameId, this);
+            Game friendGame = new Game(player1Session.getSession(), player2Session.getSession(), gameId, this, chessEngineService);
             friendGames.put(gameId, friendGame);
 
             // Update user's game_requests in database
@@ -176,6 +189,35 @@ public class GameManager {
 
         } catch (Exception e) {
             System.err.println("Error handling game acceptance: " + e.getMessage());
+        }
+    }
+    private void handleChatMessage(WebSocketSession session, JsonNode message) {
+        try {
+            JsonNode payload = message.get("payload");
+            String messageText = payload.get("message").asText();
+            String gameId = payload.get("gameId").asText();
+            
+            String senderEmail = getUserEmailBySession(session);
+            if (senderEmail == null) return;
+            
+            Game game = findGameBySession(session);
+            if (game != null) {
+                ChatMessageDto chatMessage = new ChatMessageDto();
+                chatMessage.setFrom(senderEmail);
+                chatMessage.setMessage(messageText);
+                chatMessage.setGameId(gameId);
+                
+                game.sendChatMessage(session, chatMessage);
+            }
+        } catch (Exception e) {
+            System.err.println("Error handling chat message: " + e.getMessage());
+        }
+    }
+    
+    private void handleHintRequest(WebSocketSession session) {
+        Game game = findGameBySession(session);
+        if (game != null) {
+            game.sendHint(session);
         }
     }
 

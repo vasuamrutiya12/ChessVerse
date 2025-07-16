@@ -6,6 +6,18 @@
 
 ## 🎮 Features
 
+### 🤖 AI & Analysis
+- Stockfish chess engine integration
+- Real-time move analysis and grading
+- Post-game analysis with accuracy metrics
+- AI hint system for practice mode
+- Mistake detection and improvement suggestions
+
+### 💬 Communication
+- Real-time in-game chat via WebSocket
+- Message history and timestamps
+- Clean, expandable chat interface
+
 
 ### 🕹️ Gameplay
 - Real-time multiplayer chess via WebSockets
