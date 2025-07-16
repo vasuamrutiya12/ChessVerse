@@ -84,6 +84,33 @@
 
 ---
 
+### **Install Stockfish:**
+```bash
+# Windows
+# 1. Download from https://stockfishchess.org/download/
+# 2. Extract to C:\stockfish\
+# 3. Ensure stockfish-windows-x86-64-avx2.exe is in the folder
+
+# Ubuntu/Debian
+sudo apt-get install stockfish
+
+# macOS
+brew install stockfish
+```
+
+### **Configure Stockfish Path:**
+Update the Stockfish path in `application.properties`:
+```properties
+# Windows (default)
+stockfish.path=C:\\stockfish\\stockfish-windows-x86-64-avx2.exe
+
+# Linux
+stockfish.path=/usr/bin/stockfish
+
+# macOS
+stockfish.path=/opt/homebrew/bin/stockfish
+```
+
 ### Frontend Setup
 1. Navigate to the Frontend directory:
    ```bash
@@ -240,4 +267,4 @@ For any questions or concerns, please open an issue in the repository.
 - Voice chat integration
 - Custom game variants
 - Training mode with puzzles
-- Video streaming integration 
+- Video streaming integration
