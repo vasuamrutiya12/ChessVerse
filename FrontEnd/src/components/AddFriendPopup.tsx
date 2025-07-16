@@ -13,8 +13,8 @@ const AddFriendPopup: React.FC<AddFriendPopupProps> = ({ emails, onClose }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(false);
 
-    const filteredEmails = emails.filter(email => 
-        email.toLowerCase().includes(searchTerm.toLowerCase()) && email !== userdetails?.user?.email
+    const filteredEmails = (emails || []).filter(
+        email => email && email.toLowerCase().includes(searchTerm.toLowerCase()) && email !== userdetails?.user?.email
     );
 
     const handleAddFriend = async (email: string) => {

@@ -98,7 +98,7 @@ public class ChessEngineService {
             // Analyze position before move
             writer.write("position fen " + fen + "\n");
             writer.flush();
-            writer.write("go depth " + ANALYSIS_DEPTH + "\n");
+            writer.write("go depth " + analysisDepth + "\n");
             writer.flush();
             
             int scoreBefore = 0;
@@ -123,7 +123,7 @@ public class ChessEngineService {
             // Analyze position after move
             writer.write("go depth " + analysisDepth + "\n");
             writer.flush();
-            writer.write("go depth " + ANALYSIS_DEPTH + "\n");
+            writer.write("go depth " + analysisDepth + "\n");
             writer.flush();
             
             int scoreAfter = 0;

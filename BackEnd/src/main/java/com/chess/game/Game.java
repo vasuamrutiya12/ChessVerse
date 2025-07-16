@@ -6,9 +6,7 @@ import com.chess.dto.ChatMessageDto;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 
 public class Game {
     private WebSocketSession player1;
@@ -44,6 +42,9 @@ public class Game {
 
         initializeGame();
         startTimer();
+    }
+
+    public Game(WebSocketSession player1, WebSocketSession player2, String gameId, Object o) {
     }
 
     private void initializeGame() {
