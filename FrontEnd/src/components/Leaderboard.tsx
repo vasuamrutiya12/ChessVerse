@@ -16,7 +16,8 @@ const Leaderboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/api/leaderboard?topN=10', {
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    fetch(`${apiUrl}/api/leaderboard?topN=10`, {
       credentials: 'include'
     })
       .then(res => {
@@ -24,7 +25,10 @@ const Leaderboard: React.FC = () => {
         return res.json();
       })
       .then(setData)
-      .catch(e => setError(e.message))
+      .catch(e => {
+        console.error('Leaderboard fetch error:', e);
+        setError(e.message);
+      })
       .finally(() => setLoading(false));
   }, []);
 

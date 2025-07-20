@@ -94,6 +94,14 @@ public class Game {
         }
 
         try {
+            // Check if move captures a piece
+            String capturedPiece = null;
+            String[][] board = chessEngine.getBoard();
+            int[] toPos = algebraicToPosition(move.getTo());
+            if (toPos != null && board[toPos[0]][toPos[1]] != null) {
+                capturedPiece = board[toPos[0]][toPos[1]];
+            }
+            
             boolean moveSuccessful = chessEngine.makeMove(move);
             if (!moveSuccessful) {
                 return;
@@ -101,6 +109,11 @@ public class Game {
 
             // Add move to history for analysis
             moveHistory.add(move.getFrom() + move.getTo());
+            
+            // Send capture notification if piece was captured
+            if (capturedPiece != null) {
+                sendCaptureNotification(socket, capturedPiece, move);
+            }
             
             // Analyze the move
             if (chessEngineService != null) {
@@ -115,7 +128,8 @@ public class Game {
                             "move", move.getFrom() + move.getTo(),
                             "classification", analysis.getClassification(),
                             "bestMove", analysis.getBestMove(),
-                            "scoreDiff", analysis.getScoreAfter() - analysis.getScoreBefore()
+                            "scoreDiff", analysis.getScoreAfter() - analysis.getScoreBefore(),
+                            "evaluation", analysis.getScoreAfter()
                         )
                     ));
                     
@@ -157,6 +171,62 @@ public class Game {
         }
     }
 
+    private void sendCaptureNotification(WebSocketSession capturer, String capturedPiece, Move move) {
+        try {
+            String capturerEmail = getPlayerEmailFromSession(capturer);
+            String pieceType = getPieceDisplayName(capturedPiece);
+            String color = capturedPiece.charAt(0) == 'w' ? "White" : "Black";
+            
+            String captureMessage = objectMapper.writeValueAsString(Map.of(
+                "type", "piece_captured",
+                "payload", Map.of(
+                    "capturer", capturerEmail,
+                    "piece", pieceType,
+                    "color", color,
+                    "move", move.getFrom() + move.getTo(),
+                    "message", capturerEmail + " captured " + color + " " + pieceType + "!"
+                )
+            ));
+            
+            // Send to both players
+            if (player1 != null && player1.isOpen()) {
+                player1.sendMessage(new TextMessage(captureMessage));
+            }
+            if (player2 != null && player2.isOpen()) {
+                player2.sendMessage(new TextMessage(captureMessage));
+            }
+            
+        } catch (Exception e) {
+            System.err.println("Error sending capture notification: " + e.getMessage());
+        }
+    }
+    
+    private String getPieceDisplayName(String piece) {
+        char type = piece.charAt(1);
+        switch (type) {
+            case 'p': return "Pawn";
+            case 'r': return "Rook";
+            case 'n': return "Knight";
+            case 'b': return "Bishop";
+            case 'q': return "Queen";
+            case 'k': return "King";
+            default: return "Piece";
+        }
+    }
+    
+    private int[] algebraicToPosition(String algebraic) {
+        if (algebraic == null || algebraic.length() != 2) return null;
+        
+        char file = algebraic.charAt(0);
+        char rank = algebraic.charAt(1);
+        
+        if (file < 'a' || file > 'h' || rank < '1' || rank > '8') return null;
+        
+        int col = file - 'a';
+        int row = 8 - (rank - '0');
+        
+        return new int[]{row, col};
+    }
     public void resign(WebSocketSession session) {
         try {
             String winner;
@@ -288,23 +358,52 @@ public class Game {
         try {
             chatHistory.add(chatMessage);
             
+            System.out.println("Sending chat message to both players: " + chatMessage.getMessage());
+            
             String chatMessageJson = objectMapper.writeValueAsString(Map.of(
                 "type", Messages.CHAT_MESSAGE,
-                "payload", chatMessage
+                "payload", Map.of(
+                    "from", chatMessage.getFrom(),
+                    "message", chatMessage.getMessage(),
+                    "gameId", chatMessage.getGameId(),
+                    "timestamp", chatMessage.getTimestamp().toString()
+                )
             ));
             
             // Send to both players
-            player1.sendMessage(new TextMessage(chatMessageJson));
-            player2.sendMessage(new TextMessage(chatMessageJson));
+            if (player1 != null && player1.isOpen()) {
+                player1.sendMessage(new TextMessage(chatMessageJson));
+                System.out.println("Chat sent to player1");
+            }
+            if (player2 != null && player2.isOpen()) {
+                player2.sendMessage(new TextMessage(chatMessageJson));
+                System.out.println("Chat sent to player2");
+            }
             
         } catch (Exception e) {
             System.err.println("Error sending chat message: " + e.getMessage());
+            e.printStackTrace();
         }
     }
     
     public void sendHint(WebSocketSession requester) {
         System.out.println("Sending hint to requester");
-        if (chessEngineService == null) return;
+        if (chessEngineService == null) {
+            // Send fallback hint
+            try {
+                String fallbackMessage = objectMapper.writeValueAsString(Map.of(
+                    "type", Messages.HINT_RESPONSE,
+                    "payload", Map.of(
+                        "bestMove", "e2e4",
+                        "hint", "Chess engine not available. Try developing your pieces towards the center!"
+                    )
+                ));
+                requester.sendMessage(new TextMessage(fallbackMessage));
+            } catch (Exception e) {
+                System.err.println("Error sending fallback hint: " + e.getMessage());
+            }
+            return;
+        }
         
         try {
             String fen = getCurrentFEN(); // You'll need to implement this
@@ -313,11 +412,12 @@ public class Game {
             System.out.println("Best move from engine: " + bestMove);
             
             if (bestMove != null) {
+                String hintText = generateHintText(bestMove);
                 String hintMessage = objectMapper.writeValueAsString(Map.of(
                     "type", Messages.HINT_RESPONSE,
                     "payload", Map.of(
                         "bestMove", bestMove,
-                        "hint", "Consider moving from " + bestMove.substring(0, 2) + " to " + bestMove.substring(2, 4)
+                        "hint", hintText
                     )
                 ));
                 
@@ -325,11 +425,40 @@ public class Game {
                 requester.sendMessage(new TextMessage(hintMessage));
             } else {
                 System.out.println("No best move found");
+                // Send fallback
+                String fallbackMessage = objectMapper.writeValueAsString(Map.of(
+                    "type", Messages.HINT_RESPONSE,
+                    "payload", Map.of(
+                        "bestMove", "e2e4",
+                        "hint", "Consider controlling the center or developing your pieces."
+                    )
+                ));
+                requester.sendMessage(new TextMessage(fallbackMessage));
             }
         } catch (Exception e) {
             System.err.println("Error sending hint: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+    
+    private String generateHintText(String move) {
+        if (move.length() < 4) return "Consider this move: " + move;
+        
+        String from = move.substring(0, 2);
+        String to = move.substring(2, 4);
+        
+        // Get piece at from position
+        String[][] board = chessEngine.getBoard();
+        int[] fromPos = algebraicToPosition(from);
+        String piece = null;
+        if (fromPos != null) {
+            piece = board[fromPos[0]][fromPos[1]];
+        }
+        
+        String pieceType = piece != null ? getPieceDisplayName(piece) : "piece";
+        
+        return String.format("Move your %s from %s to %s. This is the strongest move in this position.", 
+                           pieceType.toLowerCase(), from, to);
     }
     
     private void sendGameAnalysis() {
@@ -347,7 +476,9 @@ public class Game {
                     "inaccuracies", analysis.getInaccuracies(),
                     "excellent", analysis.getExcellent(),
                     "good", analysis.getGood(),
-                    "moves", analysis.getMoves()
+                    "moves", analysis.getMoves(),
+                    "totalMoves", moveHistory.size(),
+                    "gameLength", moveHistory.size() / 2
                 )
             ));
             

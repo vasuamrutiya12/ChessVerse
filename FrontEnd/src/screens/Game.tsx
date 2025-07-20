@@ -38,6 +38,7 @@ export const Game = () => {
     const [isWaiting, setIsWaiting] = useState(() => {
         return localStorage.getItem('isWaiting') === 'true';
     });
+    const [captureNotification, setCaptureNotification] = useState<string | null>(null);
 
     useEffect(() => {
         if (!userdetails?.user?.email) return;
@@ -89,6 +90,10 @@ export const Game = () => {
                     setBoard(chess.board());
                     setIsWaiting(false);
                     localStorage.removeItem('isWaiting');
+                    break;
+                case 'piece_captured':
+                    setCaptureNotification(message.payload.message);
+                    setTimeout(() => setCaptureNotification(null), 3000);
                     break;
             }
         };
@@ -418,6 +423,16 @@ export const Game = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Capture Notification */}
+            {captureNotification && (
+                <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-slide-in-right">
+                    <div className="flex items-center space-x-2">
+                        <span className="text-xl">⚔️</span>
+                        <span className="font-medium">{captureNotification}</span>
+                    </div>
+                </div>
+            )}
 
             {/* Chat Box */}
             <ChatBox 

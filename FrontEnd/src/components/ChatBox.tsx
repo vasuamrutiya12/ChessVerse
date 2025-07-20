@@ -46,14 +46,19 @@ export const ChatBox: React.FC<ChatBoxProps> = ({ socket, gameId, currentUserEma
     const sendMessage = () => {
         if (!socket || !newMessage.trim() || !gameId) return;
 
-        console.log('Sending chat message:', { message: newMessage.trim(), gameId });
+        console.log('Sending chat message:', { 
+            message: newMessage.trim(), 
+            gameId, 
+            from: currentUserEmail 
+        });
         
         socket.send(JSON.stringify({
             type: 'chat_message',
             payload: {
                 message: newMessage.trim(),
                 gameId: gameId,
-                from: currentUserEmail
+                from: currentUserEmail,
+                timestamp: new Date().toISOString()
             }
         }));
 

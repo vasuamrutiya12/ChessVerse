@@ -28,8 +28,9 @@ public class ChessEngineService {
             File stockfishFile = new File(stockfishPath);
             if (!stockfishFile.exists()) {
                 System.err.println("Stockfish not found at: " + stockfishPath);
-                // Return a random legal move as fallback
-                return "e2e4"; // Common opening move
+                // Return common opening moves as fallback
+                String[] commonMoves = {"e2e4", "d2d4", "g1f3", "b1c3", "f1c4"};
+                return commonMoves[(int)(Math.random() * commonMoves.length)];
             }
             
             Process stockfish = new ProcessBuilder(stockfishPath).start();
@@ -51,7 +52,7 @@ public class ChessEngineService {
             writer.flush();
             
             // Start analysis
-            writer.write("go depth " + analysisDepth + "\n");
+            writer.write("go depth " + hintDepth + "\n");
             writer.flush();
             
             String bestMove = null;
@@ -73,8 +74,9 @@ public class ChessEngineService {
         } catch (Exception e) {
             System.err.println("Error getting best move: " + e.getMessage());
             e.printStackTrace();
-            // Return a fallback move
-            return "e2e4";
+            // Return random fallback move
+            String[] fallbackMoves = {"e2e4", "d2d4", "g1f3", "b1c3"};
+            return fallbackMoves[(int)(Math.random() * fallbackMoves.length)];
         }
     }
     

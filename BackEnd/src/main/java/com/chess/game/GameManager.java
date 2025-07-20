@@ -196,23 +196,28 @@ public class GameManager {
             JsonNode payload = message.get("payload");
             String messageText = payload.get("message").asText();
             String gameId = payload.get("gameId").asText();
-            String fromEmail = payload.has("from") ? payload.get("from").asText() : null;
+            String fromEmail = payload.get("from").asText();
+            String timestamp = payload.has("timestamp") ? payload.get("timestamp").asText() : 
+                java.time.LocalDateTime.now().toString();
             
-            String senderEmail = fromEmail != null ? fromEmail : getUserEmailBySession(session);
-            if (senderEmail == null) return;
+            System.out.println("Processing chat message from: " + fromEmail + " in game: " + gameId);
             
             Game game = findGameBySession(session);
             if (game != null) {
                 ChatMessageDto chatMessage = new ChatMessageDto();
-                chatMessage.setFrom(senderEmail);
+                chatMessage.setFrom(fromEmail);
                 chatMessage.setMessage(messageText);
                 chatMessage.setGameId(gameId);
-                chatMessage.setTo(""); // Will be sent to both players
+                chatMessage.setTimestamp(java.time.LocalDateTime.parse(timestamp.substring(0, 19)));
                 
                 game.sendChatMessage(session, chatMessage);
+                System.out.println("Chat message sent successfully");
+            } else {
+                System.out.println("No game found for chat message");
             }
         } catch (Exception e) {
             System.err.println("Error handling chat message: " + e.getMessage());
+            e.printStackTrace();
         }
     }
     
@@ -224,6 +229,19 @@ public class GameManager {
             game.sendHint(session);
         } else {
             System.out.println("No game found for hint request");
+            // Send error response
+            try {
+                String errorMessage = objectMapper.writeValueAsString(Map.of(
+                    "type", "hint_response",
+                    "payload", Map.of(
+                        "bestMove", "e2e4",
+                        "hint", "No active game found. Try starting a new game."
+                    )
+                ));
+                session.sendMessage(new TextMessage(errorMessage));
+            } catch (Exception e) {
+                System.err.println("Error sending hint error response: " + e.getMessage());
+            }
         }
     }
 
