@@ -146,30 +146,19 @@ public class AuthController {
 
     @GetMapping("/leaderboard")
     public ResponseEntity<?> getLeaderboard(@RequestParam(defaultValue = "10") int topN) {
-        try {
-            System.out.println("Leaderboard endpoint called with topN: " + topN);
         List<User> allUsers = userRepository.findAll();
-            System.out.println("Found " + allUsers.size() + " users in database");
-            
+        System.out.print(allUsers);
         allUsers.sort((u1, u2) -> Integer.compare(u2.getElo(), u1.getElo()));
-            
         List<Map<String, Object>> leaderboard = (List<Map<String, Object>>) (List<?>) allUsers.stream().limit(topN).map(user -> Map.of(
-                "name", user.getName() != null ? user.getName() : "Unknown",
-                "email", user.getEmail() != null ? user.getEmail() : "unknown@example.com",
-                "elo", user.getElo(),
-                "wins", user.getWins(),
-                "losses", user.getLosses(),
-                "draws", user.getDraws(),
-                "currentStreak", user.getCurrentStreak()
-            )).toList();
-            
-            System.out.println("Returning leaderboard with " + leaderboard.size() + " entries");
-            return ResponseEntity.ok(leaderboard);
-        } catch (Exception e) {
-            System.err.println("Error in leaderboard endpoint: " + e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.status(500).body(Map.of("error", "Internal server error: " + e.getMessage()));
-        }
+            "name", user.getName(),
+            "email", user.getEmail(),
+            "elo", user.getElo(),
+            "wins", user.getWins(),
+            "losses", user.getLosses(),
+            "draws", user.getDraws(),
+            "currentStreak", user.getCurrentStreak()
+        )).toList();
+        return ResponseEntity.ok(leaderboard);
     }
 
     @GetMapping("/player-stats/{email}")
