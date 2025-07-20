@@ -29,6 +29,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/leaderboard").permitAll()
+                .requestMatchers("/api/leaderboard/**").permitAll()
                 .requestMatchers("/api/player-stats/**").permitAll()
                 .requestMatchers("/").permitAll()
                 .anyRequest().authenticated()

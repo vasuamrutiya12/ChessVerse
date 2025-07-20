@@ -16,9 +16,52 @@ const Leaderboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-    fetch(`${apiUrl}/api/leaderboard?topN=10`, {
-      credentials: 'include'
+    console.log('Fetching leaderboard...');
+    
+    // Try relative URL first, then fallback to absolute URL
+    const fetchLeaderboard = async () => {
+      const urls = [
+        '/api/leaderboard?topN=10',
+        'http://localhost:3000/api/leaderboard?topN=10'
+      ];
+      
+      for (const url of urls) {
+        try {
+          console.log(`Trying to fetch from: ${url}`);
+          const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include'
+          });
+          
+          console.log(`Response status: ${response.status}`);
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`Error response: ${errorText}`);
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+          }
+          
+          const data = await response.json();
+          console.log('Leaderboard data received:', data);
+          setData(data);
+          setError(null);
+          return; // Success, exit the loop
+        } catch (err) {
+          console.error(`Failed to fetch from ${url}:`, err);
+          if (url === urls[urls.length - 1]) {
+            // Last URL failed, set error
+            setError(err instanceof Error ? err.message : 'Unknown error');
+          }
+        }
+      }
+    };
+    
+    fetchLeaderboard()
+      .finally(() => setLoading(false));
+  }, []);
     })
       .then(res => {
         if (!res.ok) throw new Error('Failed to fetch leaderboard');

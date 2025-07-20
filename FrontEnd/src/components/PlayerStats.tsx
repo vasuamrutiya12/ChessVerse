@@ -32,9 +32,53 @@ const PlayerStats: React.FC<PlayerStatsProps> = ({ email }) => {
     setLoading(true);
     setError(null);
     
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-    fetch(`${apiUrl}/api/player-stats/${encodeURIComponent(email.trim())}`, {
-      credentials: 'include'
+    console.log('Fetching player stats for:', email);
+    
+    // Try relative URL first, then fallback to absolute URL
+    const fetchPlayerStats = async () => {
+      const urls = [
+        `/api/player-stats/${encodeURIComponent(email.trim())}`,
+        `http://localhost:3000/api/player-stats/${encodeURIComponent(email.trim())}`
+      ];
+      
+      for (const url of urls) {
+        try {
+          console.log(`Trying to fetch player stats from: ${url}`);
+          const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include'
+          });
+          
+          console.log(`Player stats response status: ${response.status}`);
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`Player stats error response: ${errorText}`);
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+          }
+          
+          const data = await response.json();
+          console.log('Player stats data received:', data);
+          setData(data);
+          setError(null);
+          return; // Success, exit the loop
+        } catch (err) {
+          console.error(`Failed to fetch player stats from ${url}:`, err);
+          if (url === urls[urls.length - 1]) {
+            // Last URL failed, set error
+            setError(err instanceof Error ? err.message : 'Unknown error');
+            setData(null);
+          }
+        }
+      }
+    };
+    
+    fetchPlayerStats()
+      .finally(() => setLoading(false));
+  }, [email]);
     })
       .then(res => res.json())
       .then(data => {
