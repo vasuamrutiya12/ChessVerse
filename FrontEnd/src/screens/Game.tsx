@@ -11,6 +11,7 @@ import { ChatBox } from "../components/ChatBox";
 import { MoveAnalysis } from "../components/MoveAnalysis";
 import { HintSystem } from "../components/HintSystem";
 import { apiFetch } from '../api';
+import { GameEndModal } from "../components/GameEndModal";
 
 export const INIT_GAME = "init_game";
 export const MOVE = "move";
@@ -39,6 +40,7 @@ export const Game = () => {
         return localStorage.getItem('isWaiting') === 'true';
     });
     const [captureNotification, setCaptureNotification] = useState<string | null>(null);
+    const [gameAnalysis, setGameAnalysis] = useState(null);
 
     useEffect(() => {
         if (!userdetails?.user?.email) return;
@@ -446,13 +448,15 @@ export const Game = () => {
             <MoveAnalysis 
                 socket={socket}
                 isGameActive={started}
+                setGameAnalysis={setGameAnalysis}
             />
             {/* Popups */}
             {gameOver && (
-                <GameOverPopup 
-                    winner={gameOver.winner} 
-                    message={gameOver.msg} 
-                    onclose={() => navigate('/')} 
+                <GameEndModal
+                    winner={gameOver.winner}
+                    message={gameOver.msg}
+                    onClose={() => navigate('/')}
+                    gameAnalysis={gameAnalysis}
                 />
             )}
         </div>
