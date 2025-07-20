@@ -30,10 +30,14 @@ export const MoveAnalysis: React.FC<MoveAnalysisProps> = ({ socket, isGameActive
     useEffect(() => {
         if (!socket) return;
 
+        console.log('Setting up move analysis message listener');
+        
         const handleMessage = (event: MessageEvent) => {
             const data = JSON.parse(event.data);
+            console.log('Move analysis received message:', data);
             
             if (data.type === 'move_analysis') {
+                console.log('Setting move analysis:', data.payload);
                 setLastMoveAnalysis(data.payload);
                 setShowAnalysis(true);
                 // Auto-hide after 5 seconds
@@ -41,6 +45,7 @@ export const MoveAnalysis: React.FC<MoveAnalysisProps> = ({ socket, isGameActive
             }
             
             if (data.type === 'game_analysis') {
+                console.log('Setting game analysis:', data.payload);
                 setGameAnalysis(data.payload);
             }
         };

@@ -80,6 +80,7 @@ export const Game = () => {
                     break;
                 case GAME_OVER:
                     setGameOver(message.payload);
+                    setStarted(false);
                     break;
                 case ACCEPT_GAME_REQUEST:
                     setStarted(true);

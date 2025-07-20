@@ -196,8 +196,9 @@ public class GameManager {
             JsonNode payload = message.get("payload");
             String messageText = payload.get("message").asText();
             String gameId = payload.get("gameId").asText();
+            String fromEmail = payload.has("from") ? payload.get("from").asText() : null;
             
-            String senderEmail = getUserEmailBySession(session);
+            String senderEmail = fromEmail != null ? fromEmail : getUserEmailBySession(session);
             if (senderEmail == null) return;
             
             Game game = findGameBySession(session);
@@ -206,6 +207,7 @@ public class GameManager {
                 chatMessage.setFrom(senderEmail);
                 chatMessage.setMessage(messageText);
                 chatMessage.setGameId(gameId);
+                chatMessage.setTo(""); // Will be sent to both players
                 
                 game.sendChatMessage(session, chatMessage);
             }
@@ -215,9 +217,13 @@ public class GameManager {
     }
     
     private void handleHintRequest(WebSocketSession session) {
+        System.out.println("Handling hint request from session");
         Game game = findGameBySession(session);
         if (game != null) {
+            System.out.println("Found game, sending hint");
             game.sendHint(session);
+        } else {
+            System.out.println("No game found for hint request");
         }
     }
 

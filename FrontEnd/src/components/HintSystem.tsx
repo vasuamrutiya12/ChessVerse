@@ -53,8 +53,9 @@ export const HintSystem: React.FC<HintSystemProps> = ({
     }, [socket]);
 
     const requestHint = () => {
-        if (!socket || cooldown > 0) return;
+        if (!socket || cooldown > 0 || !isYourTurn) return;
 
+        console.log('Requesting hint...');
         socket.send(JSON.stringify({
             type: 'request_hint'
         }));

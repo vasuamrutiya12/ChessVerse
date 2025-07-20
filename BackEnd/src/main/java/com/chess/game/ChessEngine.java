@@ -146,10 +146,16 @@ public class ChessEngine {
     }
 
     private void checkGameOver() {
-        // Simplified game over detection
-        // In a real implementation, you would check for checkmate, stalemate, etc.
+        // Check for checkmate and stalemate
+        if (isCheckmate()) {
+            gameOver = true;
+            winner = currentPlayer.equals("w") ? "Player-2(Black)" : "Player-1(White)";
+        } else if (isStalemate()) {
+            gameOver = true;
+            winner = "Draw";
+        }
         
-        // Count kings
+        // Count kings as fallback
         boolean whiteKingExists = false;
         boolean blackKingExists = false;
         
@@ -167,6 +173,74 @@ public class ChessEngine {
             gameOver = true;
             winner = "Player-1(White)";
         }
+    }
+    
+    private boolean isCheckmate() {
+        if (!isInCheck(currentPlayer)) {
+            return false;
+        }
+        
+        // Try all possible moves for the current player
+        for (int fromRow = 0; fromRow < 8; fromRow++) {
+            for (int fromCol = 0; fromCol < 8; fromCol++) {
+                String piece = board[fromRow][fromCol];
+                if (piece != null && piece.startsWith(currentPlayer)) {
+                    for (int toRow = 0; toRow < 8; toRow++) {
+                        for (int toCol = 0; toCol < 8; toCol++) {
+                            if (isValidMove(new int[]{fromRow, fromCol}, new int[]{toRow, toCol}, piece)) {
+                                // Make the move temporarily
+                                String originalPiece = board[toRow][toCol];
+                                board[toRow][toCol] = piece;
+                                board[fromRow][fromCol] = null;
+                                
+                                boolean stillInCheck = isInCheck(currentPlayer);
+                                
+                                // Undo the move
+                                board[fromRow][fromCol] = piece;
+                                board[toRow][toCol] = originalPiece;
+                                
+                                if (!stillInCheck) {
+                                    return false; // Found a legal move
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return true; // No legal moves found
+    }
+    
+    private boolean isInCheck(String player) {
+        // Find the king
+        int[] kingPos = findKing(player);
+        if (kingPos == null) return false;
+        
+        // Check if any opponent piece can attack the king
+        String opponent = player.equals("w") ? "b" : "w";
+        for (int row = 0; row < 8; row++) {
+            for (int col = 0; col < 8; col++) {
+                String piece = board[row][col];
+                if (piece != null && piece.startsWith(opponent)) {
+                    if (isValidMove(new int[]{row, col}, kingPos, piece)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+    
+    private int[] findKing(String player) {
+        String kingPiece = player + "k";
+        for (int row = 0; row < 8; row++) {
+            for (int col = 0; col < 8; col++) {
+                if (kingPiece.equals(board[row][col])) {
+                    return new int[]{row, col};
+                }
+            }
+        }
+        return null;
     }
 
     private int[] algebraicToPosition(String algebraic) {
@@ -209,7 +283,38 @@ public class ChessEngine {
     }
 
     public boolean isStalemate() {
-        // Simplified stalemate detection
-        return false;
+        if (isInCheck(currentPlayer)) {
+            return false; // Can't be stalemate if in check
+        }
+        
+        // Check if current player has any legal moves
+        for (int fromRow = 0; fromRow < 8; fromRow++) {
+            for (int fromCol = 0; fromCol < 8; fromCol++) {
+                String piece = board[fromRow][fromCol];
+                if (piece != null && piece.startsWith(currentPlayer)) {
+                    for (int toRow = 0; toRow < 8; toRow++) {
+                        for (int toCol = 0; toCol < 8; toCol++) {
+                            if (isValidMove(new int[]{fromRow, fromCol}, new int[]{toRow, toCol}, piece)) {
+                                // Make the move temporarily
+                                String originalPiece = board[toRow][toCol];
+                                board[toRow][toCol] = piece;
+                                board[fromRow][fromCol] = null;
+                                
+                                boolean wouldBeInCheck = isInCheck(currentPlayer);
+                                
+                                // Undo the move
+                                board[fromRow][fromCol] = piece;
+                                board[toRow][toCol] = originalPiece;
+                                
+                                if (!wouldBeInCheck) {
+                                    return false; // Found a legal move
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return true; // No legal moves found
     }
 }

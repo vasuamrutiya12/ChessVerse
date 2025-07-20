@@ -32,7 +32,7 @@ const PlayerStats: React.FC<PlayerStatsProps> = ({ email }) => {
     setLoading(true);
     setError(null);
     
-    apiFetch(`/api/player-stats/${encodeURIComponent(email.trim())}`, {
+    fetch(`/api/player-stats/${encodeURIComponent(email.trim())}`, {
       credentials: 'include'
     })
       .then(res => res.json())

@@ -303,11 +303,14 @@ public class Game {
     }
     
     public void sendHint(WebSocketSession requester) {
+        System.out.println("Sending hint to requester");
         if (chessEngineService == null) return;
         
         try {
             String fen = getCurrentFEN(); // You'll need to implement this
+            System.out.println("Current FEN: " + fen);
             String bestMove = chessEngineService.getBestMove(fen, 10);
+            System.out.println("Best move from engine: " + bestMove);
             
             if (bestMove != null) {
                 String hintMessage = objectMapper.writeValueAsString(Map.of(
@@ -318,10 +321,14 @@ public class Game {
                     )
                 ));
                 
+                System.out.println("Sending hint message: " + hintMessage);
                 requester.sendMessage(new TextMessage(hintMessage));
+            } else {
+                System.out.println("No best move found");
             }
         } catch (Exception e) {
             System.err.println("Error sending hint: " + e.getMessage());
+            e.printStackTrace();
         }
     }
     
@@ -353,9 +360,50 @@ public class Game {
     }
     
     private String getCurrentFEN() {
-        // This is a simplified implementation
-        // You'll need to implement proper FEN generation from your chess engine
-        return "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+        StringBuilder fen = new StringBuilder();
+        
+        // Board position
+        String[][] board = chessEngine.getBoard();
+        for (int rank = 0; rank < 8; rank++) {
+            int emptyCount = 0;
+            for (int file = 0; file < 8; file++) {
+                String piece = board[rank][file];
+                if (piece == null) {
+                    emptyCount++;
+                } else {
+                    if (emptyCount > 0) {
+                        fen.append(emptyCount);
+                        emptyCount = 0;
+                    }
+                    // Convert piece notation
+                    char pieceChar = piece.charAt(1);
+                    if (piece.charAt(0) == 'w') {
+                        pieceChar = Character.toUpperCase(pieceChar);
+                    }
+                    fen.append(pieceChar);
+                }
+            }
+            if (emptyCount > 0) {
+                fen.append(emptyCount);
+            }
+            if (rank < 7) {
+                fen.append('/');
+            }
+        }
+        
+        // Active color
+        fen.append(' ').append(chessEngine.getCurrentPlayer());
+        
+        // Castling availability (simplified)
+        fen.append(" KQkq");
+        
+        // En passant target square (simplified)
+        fen.append(" -");
+        
+        // Halfmove clock and fullmove number (simplified)
+        fen.append(" 0 ").append((moveCount / 2) + 1);
+        
+        return fen.toString();
     }
 
     private String getPlayerEmailFromSession(WebSocketSession session) {

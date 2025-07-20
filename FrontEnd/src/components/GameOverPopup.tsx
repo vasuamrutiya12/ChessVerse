@@ -11,8 +11,14 @@ interface GameOverPopupProps {
 export const GameOverPopup: React.FC<GameOverPopupProps> = ({ winner, message, onclose }) => {
     const navigate = useNavigate();
 
+    const handlePlayAgain = () => {
+        onclose();
+        // Reset the game state and start a new game
+        window.location.reload();
+    };
+
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-center items-center p-4\" onClick={onclose}>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-center items-center p-4" onClick={onclose}>
             <div className="w-full max-w-lg bg-slate-800 rounded-2xl border border-slate-700 shadow-2xl" onClick={(e) => e.stopPropagation()}>
                 <div className="p-8 text-center">
                     <div className="mb-6">
@@ -29,7 +35,7 @@ export const GameOverPopup: React.FC<GameOverPopupProps> = ({ winner, message, o
                     
                     <div className="space-y-3">
                         <Button 
-                            onClick={() => navigate('/game')} 
+                            onClick={handlePlayAgain} 
                             className="w-full"
                             size="lg"
                         >

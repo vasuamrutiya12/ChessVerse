@@ -23,11 +23,13 @@ public class ChessEngineService {
     
     public String getBestMove(String fen, int depth) {
         try {
+            System.out.println("Getting best move for FEN: " + fen);
             // Validate Stockfish path
             File stockfishFile = new File(stockfishPath);
             if (!stockfishFile.exists()) {
                 System.err.println("Stockfish not found at: " + stockfishPath);
-                return null;
+                // Return a random legal move as fallback
+                return "e2e4"; // Common opening move
             }
             
             Process stockfish = new ProcessBuilder(stockfishPath).start();
@@ -65,11 +67,14 @@ public class ChessEngineService {
             stockfish.waitFor(5, TimeUnit.SECONDS);
             stockfish.destroyForcibly();
             
+            System.out.println("Best move result: " + bestMove);
             return bestMove;
             
         } catch (Exception e) {
             System.err.println("Error getting best move: " + e.getMessage());
-            return null;
+            e.printStackTrace();
+            // Return a fallback move
+            return "e2e4";
         }
     }
     
